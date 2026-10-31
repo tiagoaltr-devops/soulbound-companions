@@ -1,0 +1,8 @@
+{
+  "entity.soulbound.lupus_companion": "Baby Lupus Companion",
+  "item.soulbound.companion_egg": "Companion Egg",
+  "message.soulbound.not_owner": "Only the owner can command this companion.",
+  "message.soulbound.mode": "Lupus: %s",
+  "behavior.soulbound.follow_passive": "Follow (passive)",
+  "behavior.soulbound.stay": "Stay"
+}

@@ -1,0 +1,13 @@
+{
+  "itemGroup.soulboundcompanions": "Example Mod Tab",
+  "block.soulboundcompanions.example_block": "Example Block",
+  "item.soulboundcompanions.example_item": "Example Item",
+
+  "soulboundcompanions.configuration.title": "Soulbound Companions Configs",
+  "soulboundcompanions.configuration.section.soulboundcompanions.common.toml": "Soulbound Companions Configs",
+  "soulboundcompanions.configuration.section.soulboundcompanions.common.toml.title": "Soulbound Companions Configs",
+  "soulboundcompanions.configuration.items": "Item List",
+  "soulboundcompanions.configuration.logDirtBlock": "Log Dirt Block",
+  "soulboundcompanions.configuration.magicNumberIntroduction": "Magic Number Text",
+  "soulboundcompanions.configuration.magicNumber": "Magic Number"
+}
