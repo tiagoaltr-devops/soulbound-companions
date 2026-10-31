@@ -1,0 +1,16 @@
+{
+    "offerings":  [
+                      {
+                          "count":  1,
+                          "item":  "minecraft:netherite_ingot"
+                      },
+                      {
+                          "count":  2,
+                          "item":  "minecraft:echo_shard"
+                      },
+                      {
+                          "count":  1,
+                          "item":  "minecraft:diamond_block"
+                      }
+                  ]
+}

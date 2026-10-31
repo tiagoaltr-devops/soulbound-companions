@@ -1,0 +1,14 @@
+{
+    "ingredients":  [
+                        "minecraft:obsidian",
+                        "minecraft:obsidian",
+                        "minecraft:gold_ingot",
+                        "minecraft:amethyst_shard"
+                    ],
+    "category":  "misc",
+    "result":  {
+                   "id":  "soulbound:offering_altar",
+                   "count":  1
+               },
+    "type":  "minecraft:crafting_shapeless"
+}

@@ -1,0 +1,6 @@
+{
+    "textures":  {
+                     "all":  "soulbound:block/ancestral_pedestal"
+                 },
+    "parent":  "minecraft:block/cube_all"
+}

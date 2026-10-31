@@ -1,0 +1,6 @@
+{
+    "model":  {
+                  "model":  "soulbound:item/divine_core",
+                  "type":  "minecraft:model"
+              }
+}

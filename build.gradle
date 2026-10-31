@@ -63,6 +63,18 @@ neoForge {
             programArgument '--nogui'
             systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
         }
+        phase6Server {
+            server()
+            gameDirectory = project.file('runs/phase6-server')
+            programArgument '--nogui'
+            programArguments.addAll '--port', '25576'
+        }
+        phase611Server {
+            server()
+            gameDirectory = project.file('runs/phase611-server')
+            programArgument '--nogui'
+            programArguments.addAll '--port', '25578'
+        }
 
         // This run config launches GameTestServer and runs all registered gametests, then exits.
         // By default, the server will crash when no gametests are provided.
@@ -103,6 +115,7 @@ neoForge {
         // multi mod projects should define one per mod
         "${mod_id}" {
             sourceSet(sourceSets.main)
+            if (providers.gradleProperty('phase611LiveChecks').isPresent()) sourceSet(sourceSets.test)
         }
     }
 }
@@ -179,6 +192,52 @@ publishing {
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8' // Use the UTF-8 charset for Java compilation
 }
+
+// Dependency-free checks for canonical identity rules and persisted codec round trips.
+sourceSets.test {
+    compileClasspath += sourceSets.main.compileClasspath
+    runtimeClasspath += sourceSets.main.runtimeClasspath
+}
+def identityChecks = tasks.register('identityChecks', JavaExec) {
+    dependsOn tasks.named('testClasses')
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'br.com.soulbound.companion.identity.SoulboundIdentityChecks'
+}
+tasks.named('check').configure { dependsOn identityChecks }
+def babyVisualChecks = tasks.register('babyVisualChecks', JavaExec) {
+    dependsOn tasks.named('testClasses')
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'br.com.soulbound.client.BabyVisualChecks'
+    systemProperty 'java.awt.headless', 'true'
+}
+tasks.named('check').configure { dependsOn babyVisualChecks }
+def soulStaffChecks = tasks.register('soulStaffChecks', JavaExec) {
+    dependsOn tasks.named('testClasses')
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'br.com.soulbound.companion.SoulStaffChecks'
+    systemProperty 'java.awt.headless', 'true'
+}
+tasks.named('check').configure { dependsOn soulStaffChecks }
+def soulRecallChecks = tasks.register('soulRecallChecks', JavaExec) {
+    dependsOn tasks.named('testClasses')
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'br.com.soulbound.companion.recall.SoulRecallChecks'
+}
+tasks.named('check').configure { dependsOn soulRecallChecks }
+def altarChecks = tasks.register('altarChecks', JavaExec) {
+    dependsOn tasks.named('testClasses')
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'br.com.soulbound.ritual.AltarChecks'
+}
+tasks.named('check').configure { dependsOn altarChecks }
+def resonanceChecks = tasks.register('resonanceChecks', JavaExec) {
+    dependsOn tasks.named('testClasses')
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'br.com.soulbound.ritual.AncestralResonanceChecks'
+}
+tasks.named('check').configure { dependsOn resonanceChecks }
+// These executable checks use JavaExec rather than a downloaded JUnit engine.
+tasks.named('test', Test).configure { failOnNoDiscoveredTests = false }
 
 // IDEA no longer automatically downloads sources/javadoc jars for dependencies, so we need to explicitly enable the behavior.
 idea {

@@ -1,0 +1,15 @@
+{
+    "ingredients":  [
+                        "minecraft:lily_of_the_valley",
+                        "minecraft:diamond",
+                        "minecraft:diamond",
+                        "minecraft:diamond",
+                        "minecraft:diamond"
+                    ],
+    "category":  "misc",
+    "result":  {
+                   "id":  "soulbound:restoration_core",
+                   "count":  1
+               },
+    "type":  "minecraft:crafting_shapeless"
+}

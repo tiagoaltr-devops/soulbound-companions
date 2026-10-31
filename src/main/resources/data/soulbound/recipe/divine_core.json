@@ -1,0 +1,13 @@
+{
+    "ingredients":  [
+                        "soulbound:draconic_essence",
+                        "minecraft:nether_star",
+                        "minecraft:amethyst_shard"
+                    ],
+    "category":  "misc",
+    "result":  {
+                   "id":  "soulbound:divine_core",
+                   "count":  1
+               },
+    "type":  "minecraft:crafting_shapeless"
+}

@@ -1,0 +1,6 @@
+{
+    "textures":  {
+                     "all":  "soulbound:block/ritual_stone"
+                 },
+    "parent":  "minecraft:block/cube_all"
+}

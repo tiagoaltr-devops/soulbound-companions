@@ -1,0 +1,6 @@
+{
+    "model":  {
+                  "model":  "soulbound:item/ancestral_spark",
+                  "type":  "minecraft:model"
+              }
+}

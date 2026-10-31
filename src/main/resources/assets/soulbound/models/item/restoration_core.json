@@ -1,0 +1,6 @@
+{
+    "textures":  {
+                     "layer0":  "soulbound:item/restoration_core"
+                 },
+    "parent":  "minecraft:item/generated"
+}

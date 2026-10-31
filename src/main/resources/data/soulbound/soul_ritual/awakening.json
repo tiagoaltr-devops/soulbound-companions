@@ -1,0 +1,16 @@
+{
+    "offerings":  [
+                      {
+                          "count":  2,
+                          "item":  "minecraft:diamond"
+                      },
+                      {
+                          "count":  8,
+                          "item":  "minecraft:amethyst_shard"
+                      },
+                      {
+                          "count":  16,
+                          "item":  "minecraft:lapis_lazuli"
+                      }
+                  ]
+}

@@ -1,0 +1,6 @@
+{
+    "model":  {
+                  "model":  "soulbound:item/offering_altar",
+                  "type":  "minecraft:model"
+              }
+}

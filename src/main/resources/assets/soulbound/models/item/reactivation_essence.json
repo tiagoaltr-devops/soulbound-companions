@@ -1,0 +1,6 @@
+{
+    "textures":  {
+                     "layer0":  "soulbound:item/reactivation_essence"
+                 },
+    "parent":  "minecraft:item/generated"
+}

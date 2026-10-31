@@ -1,0 +1,6 @@
+{
+    "textures":  {
+                     "layer0":  "soulbound:item/charged_core"
+                 },
+    "parent":  "minecraft:item/generated"
+}

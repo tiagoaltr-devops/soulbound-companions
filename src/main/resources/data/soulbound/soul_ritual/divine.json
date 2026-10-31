@@ -1,0 +1,16 @@
+{
+    "offerings":  [
+                      {
+                          "count":  1,
+                          "item":  "soulbound:draconic_essence"
+                      },
+                      {
+                          "count":  1,
+                          "item":  "minecraft:nether_star"
+                      },
+                      {
+                          "count":  4,
+                          "item":  "minecraft:end_crystal"
+                      }
+                  ]
+}

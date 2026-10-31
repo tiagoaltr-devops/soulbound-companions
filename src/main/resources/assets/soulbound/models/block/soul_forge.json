@@ -1,0 +1,6 @@
+{
+    "textures":  {
+                     "all":  "soulbound:block/soul_forge"
+                 },
+    "parent":  "minecraft:block/cube_all"
+}

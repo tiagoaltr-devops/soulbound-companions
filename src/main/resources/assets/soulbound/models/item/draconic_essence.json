@@ -1,0 +1,6 @@
+{
+    "textures":  {
+                     "layer0":  "soulbound:item/draconic_essence"
+                 },
+    "parent":  "minecraft:item/generated"
+}

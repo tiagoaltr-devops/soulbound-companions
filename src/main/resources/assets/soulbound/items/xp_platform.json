@@ -1,0 +1,6 @@
+{
+    "model":  {
+                  "model":  "soulbound:item/xp_platform",
+                  "type":  "minecraft:model"
+              }
+}

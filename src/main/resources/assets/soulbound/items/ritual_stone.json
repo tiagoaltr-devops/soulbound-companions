@@ -1,0 +1,6 @@
+{
+    "model":  {
+                  "model":  "soulbound:item/ritual_stone",
+                  "type":  "minecraft:model"
+              }
+}

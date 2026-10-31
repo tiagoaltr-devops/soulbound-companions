@@ -1,0 +1,13 @@
+{
+    "ingredients":  [
+                        "minecraft:netherite_block",
+                        "minecraft:echo_shard",
+                        "minecraft:diamond"
+                    ],
+    "category":  "misc",
+    "result":  {
+                   "id":  "soulbound:ascension_core",
+                   "count":  1
+               },
+    "type":  "minecraft:crafting_shapeless"
+}

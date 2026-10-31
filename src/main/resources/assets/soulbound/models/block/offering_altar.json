@@ -1,0 +1,6 @@
+{
+    "textures":  {
+                     "all":  "soulbound:block/offering_altar"
+                 },
+    "parent":  "minecraft:block/cube_all"
+}

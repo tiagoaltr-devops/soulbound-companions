@@ -1,0 +1,6 @@
+{
+    "model":  {
+                  "model":  "soulbound:item/reactivation_essence",
+                  "type":  "minecraft:model"
+              }
+}

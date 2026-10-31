@@ -1,0 +1,7 @@
+{
+    "variants":  {
+                     "":  {
+                              "model":  "soulbound:block/offering_altar"
+                          }
+                 }
+}

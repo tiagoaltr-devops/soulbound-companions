@@ -1,0 +1,14 @@
+{
+    "ingredients":  [
+                        "minecraft:echo_shard",
+                        "minecraft:ghast_tear",
+                        "minecraft:amethyst_shard",
+                        "minecraft:netherite_scrap"
+                    ],
+    "category":  "misc",
+    "result":  {
+                   "id":  "soulbound:reactivation_essence",
+                   "count":  1
+               },
+    "type":  "minecraft:crafting_shapeless"
+}

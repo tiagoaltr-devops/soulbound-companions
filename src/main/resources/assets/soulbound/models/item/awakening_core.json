@@ -1,0 +1,6 @@
+{
+    "textures":  {
+                     "layer0":  "soulbound:item/awakening_core"
+                 },
+    "parent":  "minecraft:item/generated"
+}

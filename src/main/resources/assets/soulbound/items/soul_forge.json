@@ -1,0 +1,6 @@
+{
+    "model":  {
+                  "model":  "soulbound:item/soul_forge",
+                  "type":  "minecraft:model"
+              }
+}

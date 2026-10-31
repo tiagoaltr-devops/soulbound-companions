@@ -1,0 +1,14 @@
+{
+    "ingredients":  [
+                        "minecraft:obsidian",
+                        "minecraft:obsidian",
+                        "minecraft:lapis_block",
+                        "minecraft:sculk"
+                    ],
+    "category":  "misc",
+    "result":  {
+                   "id":  "soulbound:xp_platform",
+                   "count":  1
+               },
+    "type":  "minecraft:crafting_shapeless"
+}

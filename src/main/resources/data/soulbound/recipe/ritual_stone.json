@@ -1,0 +1,14 @@
+{
+    "ingredients":  [
+                        "minecraft:stone_bricks",
+                        "minecraft:stone_bricks",
+                        "minecraft:amethyst_shard",
+                        "minecraft:lapis_lazuli"
+                    ],
+    "category":  "misc",
+    "result":  {
+                   "id":  "soulbound:ritual_stone",
+                   "count":  4
+               },
+    "type":  "minecraft:crafting_shapeless"
+}

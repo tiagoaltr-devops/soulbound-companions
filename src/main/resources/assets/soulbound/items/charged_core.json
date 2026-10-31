@@ -1,0 +1,6 @@
+{
+    "model":  {
+                  "model":  "soulbound:item/charged_core",
+                  "type":  "minecraft:model"
+              }
+}

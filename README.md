@@ -1,9 +1,31 @@
 
-Soulbound Companions — Baby MVP
+Soulbound Companions — Baby Flutuante
 =======
 
 Compatibilidade: Minecraft Java 1.21.11, NeoForge 21.11.48, Java 21.
 Mod ID: `soulbound`. As dependências e o Gradle wrapper originais foram preservados.
+
+A Fase 2 adiciona alertas de ameaças, fuga emergencial com retorno ao ponto de
+Ficar e Instinto Mineral incremental. Consulte [Fase 2](docs/PHASE2.md) para
+configuração, arquivos alterados, limitações e testes desta fase. Os resultados
+de inicialização documentados mais abaixo se referem à Fase 1.
+
+O sistema [Soulbound Identity](docs/SOULBOUND_IDENTITY.md) estabelece um vínculo
+permanente por UUID de jogador, entrega inicial do Ovo da Alma e proteção contra
+invocações duplicadas. O ovo agora permanece no inventário após a invocação.
+Para recuperar somente o ovo do vínculo existente, use `/soulbound recover`.
+
+A [Fase 4 — visual e voo Baby](docs/PHASE4_BABY_VISUAL.md) adiciona modelo próprio,
+textura original e navegação tridimensional. O Lupus continua sendo Baby, com os
+mesmos UUIDs e regras de Soulbound Identity. Ficar agora mantém voo estacionário.
+
+A [Fase 5 — Bastão da Alma](docs/PHASE5_SOUL_STAFF.md) mantém o mesmo item e muda
+sua aparência conforme o estado oficial. Com o companheiro ACTIVE, clique direito
+no ar alterna Seguir/Ficar; Shift + clique direito abre o menu de comandos Baby.
+
+A [Fase 5.1 — Chamado da Alma](docs/PHASE51_SOUL_RECALL.md) acrescenta **Chamar
+companheiro** ao menu. O chamado recupera a entidade canônica, inclusive de outro
+chunk ou dimensão, retorna a Follow e tem cooldown persistente de 30 segundos.
 
 ### Executar
 
@@ -19,25 +41,26 @@ nome pode continuar em `build/libs`; use somente o artefato `soulbound` atual.
 
 ### Teste manual (mundo de teste com comandos habilitados)
 
-1. Confirme Soulbound Companions na lista de mods. Entre no mundo e execute:
-   `/give @s soulbound:companion_egg 16`.
+1. Confirme Soulbound Companions na lista de mods. Entre no mundo e confira a
+   entrega do Ovo da Alma. Para recuperar o item, use `/soulbound recover`.
+   Para testes de normalização, use `/give @s soulbound:companion_egg`.
 2. Use o ovo na face superior de um bloco sólido com espaço livre. Deve aparecer
-   exatamente um Lupus Baby com modelo provisório de lobo; o jogador que usou
-   o ovo deve ser seu proprietário. O ovo usa a textura vanilla de ovo.
-3. Em sobrevivência, confira o consumo de um ovo por invocação. Em criativo,
-   confira que a quantidade não diminui. Uma posição bloqueada deve impedir a
-   invocação sem consumir o ovo.
-4. Caminhe mais de três blocos em terreno acessível. O Lupus deve seguir e parar
-   próximo do proprietário. Não há teleporte: obstáculos, dimensões diferentes
+   exatamente um Lupus Baby mágico flutuante; o jogador que usou
+   o ovo deve ser seu proprietário. O item passa a exibir o Bastão da Alma.
+3. Confira que o mesmo item permanece após invocar, tanto em sobrevivência quanto
+   em criativo, e que outros usos comandam o Lupus sem criar outro. Uma posição
+   bloqueada deve impedir a invocação sem alterar o estado de prontidão.
+4. Caminhe, suba e desça em terreno acessível. O Lupus deve seguir em três
+   dimensões e parar próximo do proprietário. Não há teleporte: obstáculos, dimensões diferentes
    e chunks descarregados podem interromper o acompanhamento.
-5. Clique com o botão direito no Lupus. Confira a mensagem de Ficar, a pose
-   sentada e a interrupção da navegação. Afaste-se e confirme que ele permanece
+5. Clique com o botão direito no Lupus. Confira a mensagem de Ficar e o voo
+   estacionário próximo ao ponto do comando. Afaste-se e confirme que ele permanece
    no local. Clique novamente para voltar a Seguir (passivo).
 6. Em multiplayer, um segundo jogador deve receber a mensagem de falta de
    permissão e não mudar o modo nem tomar posse. Confira também com itens nas
    mãos, incluindo laço, comida e outro ovo.
-7. Coloque um Lupus em Ficar e outro em Seguir. Salve e saia do mundo; reabra.
-   Confira proprietário e modos preservados. Para inspecionar os dados, use:
+7. Coloque o Lupus em Ficar, salve, saia e reabra. Repita em Seguir.
+   Confira proprietário e modo preservados. Para inspecionar os dados, use:
    `/data get entity @e[type=soulbound:lupus_companion,sort=nearest,limit=1]`.
    Confira `OwnerUUID`, `EvolutionStage: "BABY"`, `BehaviorMode` e vida máxima 12.
 8. Aproxime jogadores e mobs, ataque o Lupus e ataque o proprietário. O Baby
@@ -64,8 +87,8 @@ Evolução, combate, transformação GOD, rituais e ressurreição não estão i
 - `client/LupusCompanionRenderer.java`: modelo vanilla `WOLF_BABY` e render state.
 - `assets/soulbound/`: traduções e definição/modelo do item.
 
-Os arquivos de configuração e tradução de exemplo do template permanecem no
-projeto, sem registro ativo, para evitar excluí-los sem autorização.
+A tradução de exemplo do template permanece sem registro ativo. `Config.java`
+foi reaproveitado na Fase 2 para os parâmetros de exploração do servidor.
 
 ### Validação realizada e arquivos alterados
 
@@ -128,3 +151,10 @@ Additional Resources:
 ==========
 Community Documentation: https://docs.neoforged.net/  
 NeoForged Discord: https://discord.neoforged.net/
+# Fase 6 — Altar da Alma
+
+Ruínas, provas individuais, Forja multibloco, rituais e progressão foram integrados.
+O nascimento inicial e o Soul Recall continuam sem custo de XP. Veja o
+[relatório de implementação](docs/FASE_6_IMPLEMENTACAO.md) e o
+[checklist de homologação](docs/FASE_6_CHECKLIST.md), incluindo resultados dos testes
+e limitações. Jogabilidade e multiplayer desta fase ainda exigem homologação.

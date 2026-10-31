@@ -1,0 +1,6 @@
+{
+    "textures":  {
+                     "all":  "soulbound:block/xp_platform"
+                 },
+    "parent":  "minecraft:block/cube_all"
+}
