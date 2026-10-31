@@ -14,7 +14,7 @@ public final class AltarInventory {
     public static String encode(ServerLevel level,ItemStack stack){return stack.isEmpty()?"":ItemStack.CODEC.encodeStart(level.registryAccess().createSerializationContext(JsonOps.INSTANCE),stack).getOrThrow().toString();}
     public static ItemStack decode(ServerLevel level,String json){return json==null||json.isEmpty()?ItemStack.EMPTY:ItemStack.CODEC.parse(level.registryAccess().createSerializationContext(JsonOps.INSTANCE),JsonParser.parseString(json)).getOrThrow();}
     public static void exchange(ServerPlayer p,BlockPos pos){
-        if(RitualService.locked(p.level(),pos))return;
+        if(RitualService.locked(p.level(),pos)){ForgeService.reject(p,"busy");return;}
         InventoryTransfers.exchange(p,key(p.level(),pos),false);
     }
 }

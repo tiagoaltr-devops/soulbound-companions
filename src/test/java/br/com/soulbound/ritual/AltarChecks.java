@@ -63,6 +63,66 @@ public final class AltarChecks {
                 check(stream!=null);var json=com.google.gson.JsonParser.parseReader(new java.io.InputStreamReader(stream,java.nio.charset.StandardCharsets.UTF_8)).getAsJsonObject();check(json.getAsJsonArray("offerings").size()==3);
             }
         }
+        recipe("offering_altar",1,"minecraft:obsidian","minecraft:obsidian","minecraft:gold_ingot","minecraft:amethyst_shard");
+        recipe("ritual_stone",4,"minecraft:stone_bricks","minecraft:stone_bricks","minecraft:amethyst_shard","minecraft:lapis_lazuli");
+        recipe("xp_platform",1,"minecraft:obsidian","minecraft:obsidian","minecraft:lapis_block","minecraft:sculk");
+        try(var stream=AltarChecks.class.getResourceAsStream("/data/soulbound/recipe/soul_forge.json")){
+            check(stream!=null);check(com.google.gson.JsonParser.parseReader(new java.io.InputStreamReader(stream,java.nio.charset.StandardCharsets.UTF_8)).getAsJsonObject().get("type").getAsString().equals("soulbound:forge_crafting"));
+        }
+        forge.owner=java.util.UUID.randomUUID().toString();forge.state="ACTIVE";forge.placed=true;
+        var activeCopy=AltarSavedData.CODEC.parse(JsonOps.INSTANCE,AltarSavedData.CODEC.encodeStart(JsonOps.INSTANCE,d).getOrThrow()).getOrThrow().state.forges.get(forge.id);
+        check(activeCopy.owner.equals(forge.owner) && activeCopy.state.equals("ACTIVE") && activeCopy.placed);
+        activationChecks();
         System.out.println("Altar checks passed: "+count);
+    }
+    private static void activationChecks()throws Exception{
+        check(ForgeActivation.offeringMatches("minecraft:diamond",2,"minecraft:diamond",2));
+        check(!ForgeActivation.offeringMatches("minecraft:diamond",1,"minecraft:diamond",2));
+        check(!ForgeActivation.offeringMatches("minecraft:amethyst_shard",64,"minecraft:diamond",2));
+        check(ForgeActivation.offeringMatches("minecraft:amethyst_shard",8,"minecraft:amethyst_shard",8));
+        check(ForgeActivation.offeringMatches("minecraft:echo_shard",1,"minecraft:echo_shard",1));
+        var d=new AltarSavedData();var f=new AltarSavedData.Forge();f.id="activation";f.placed=true;d.state.forges.put(f.id,f);
+        String player=java.util.UUID.randomUUID().toString();
+        check(ForgeActivation.view(f)==0);check(!ForgeActivation.coreAllowed(f,player,false));
+        var a=new AltarSavedData.Activation();a.player=player;a.end=300;a.result="ACTIVE";a.attempts=0;
+        a.offerings.put("north","2 diamonds");a.offerings.put("west","8 amethyst");a.offerings.put("east","1 echo");
+        d.state.slots.putAll(a.offerings);var leftovers=java.util.Map.of("north","1 diamond","west","","east","");
+        check(ForgeActivation.begin(d,f,a,leftovers));check(ForgeActivation.view(f)==4);check(f.owner==null);
+        check(d.state.slots.get("north").equals("1 diamond"));
+        check(!ForgeActivation.begin(d,f,a,java.util.Map.of("north","would consume again")));
+        check(d.state.slots.get("north").equals("1 diamond"));check(ForgeActivation.rejection(f,player).equals("busy"));
+        check(!ForgeActivation.coreAllowed(f,player,true));check(ForgeActivation.complete(f,299)==null);
+        var resumed=AltarSavedData.CODEC.parse(JsonOps.INSTANCE,AltarSavedData.CODEC.encodeStart(JsonOps.INSTANCE,d).getOrThrow()).getOrThrow().state.forges.get(f.id);
+        check(resumed.activation.end==300 && resumed.activation.offerings.equals(a.offerings));
+        var root=new net.minecraft.nbt.CompoundTag();root.put("data",AltarSavedData.CODEC.encodeStart(net.minecraft.nbt.NbtOps.INSTANCE,d).getOrThrow());
+        var file=java.nio.file.Files.createTempFile("soulbound-activation-",".dat");file.toFile().deleteOnExit();net.minecraft.nbt.NbtIo.writeCompressed(root,file);
+        var persisted=AltarSavedData.CODEC.parse(net.minecraft.nbt.NbtOps.INSTANCE,net.minecraft.nbt.NbtIo.readCompressed(file,net.minecraft.nbt.NbtAccounter.unlimitedHeap()).get("data")).getOrThrow().state.forges.get(f.id);
+        check(persisted.activation.player.equals(player) && persisted.activation.end==300 && persisted.activation.offerings.size()==3);
+        check(ForgeActivation.complete(resumed,300)!=null);check(resumed.owner.equals(player));check(ForgeActivation.view(resumed)==2);
+        check(ForgeActivation.complete(resumed,301)==null);check(ForgeActivation.coreAllowed(resumed,"visitor",false));
+        check(ForgeActivation.rejection(resumed,player).equals("state"));
+        resumed.state="INACTIVE";check(ForgeActivation.view(resumed)==1);check(ForgeActivation.rejection(resumed,"other").equals("permission"));
+        check(!ForgeActivation.coreAllowed(resumed,player,false));check(ForgeActivation.coreAllowed(resumed,player,true));
+        for(String state:new String[]{"ACTIVE","INACTIVE","DESTROYED"}){
+            a.result=state;resumed.activation=a;check(ForgeActivation.complete(resumed,300)!=null);
+            check(resumed.state.equals(state));check(ForgeActivation.complete(resumed,300)==null);
+        }
+        check(ForgeActivation.view(resumed)==3);
+        for(String language:new String[]{"pt_br","en_us"}){
+            try(var stream=AltarChecks.class.getResourceAsStream("/assets/soulbound/lang/"+language+".json")){
+                var json=com.google.gson.JsonParser.parseReader(new java.io.InputStreamReader(stream,java.nio.charset.StandardCharsets.UTF_8)).getAsJsonObject();
+                check(json.has("message.soulbound.forge_error.offering") && json.has("message.soulbound.forge_awakened"));
+                check(json.has("menu.soulbound.forge_activate") && json.has("menu.soulbound.forge_reactivate"));
+            }
+        }
+    }
+    private static void recipe(String id,int amount,String... ingredients)throws Exception{
+        try(var stream=AltarChecks.class.getResourceAsStream("/data/soulbound/recipe/"+id+".json")){
+            check(stream!=null);var json=com.google.gson.JsonParser.parseReader(new java.io.InputStreamReader(stream,java.nio.charset.StandardCharsets.UTF_8)).getAsJsonObject();
+            check(json.get("type").getAsString().equals("minecraft:crafting_shapeless"));
+            check(json.getAsJsonObject("result").get("id").getAsString().equals("soulbound:"+id) && json.getAsJsonObject("result").get("count").getAsInt()==amount);
+            var actual=new java.util.ArrayList<String>();json.getAsJsonArray("ingredients").forEach(v->actual.add(v.getAsString()));
+            var expected=new java.util.ArrayList<>(java.util.List.of(ingredients));java.util.Collections.sort(actual);java.util.Collections.sort(expected);check(actual.equals(expected));
+        }
     }
 }

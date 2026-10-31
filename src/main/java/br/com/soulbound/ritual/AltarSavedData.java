@@ -46,6 +46,13 @@ public final class AltarSavedData extends SavedData {
         public int x,y,z, attempts;
         public boolean placed;
         public String core = "";
+        public Activation activation;
+    }
+    public static final class Activation {
+        public String player,result,core="";
+        public long end;
+        public int rotation,attempts;
+        public Map<String,String> offerings=new HashMap<>();
     }
     public static final class Token {
         public String id, kind, owner;
@@ -80,6 +87,11 @@ public final class AltarSavedData extends SavedData {
             throw new IllegalArgumentException("Invalid altar registry");
         d.state.ruins.forEach((id,r) -> { if (!id.equals(r.id) || r.completed == null || r.cooldowns == null || r.dimension==null || r.completions<0) throw new IllegalArgumentException("Invalid ruin"); });
         d.state.forges.forEach((id,f) -> { if (!id.equals(f.id) || f.attempts<0 || f.core==null || !Set.of("UNBOUND","INACTIVE","ACTIVE","DESTROYED").contains(f.state)) throw new IllegalArgumentException("Invalid forge"); });
+        d.state.forges.values().forEach(f->{var a=f.activation;if(a!=null){
+            if(a.player==null || a.core==null || a.offerings==null || a.offerings.size()!=3 || a.rotation<0 || a.rotation>3 || a.attempts<0
+                    || !Set.of("ACTIVE","INACTIVE","DESTROYED").contains(a.result) || f.owner==null && !"ACTIVE".equals(a.result))throw new IllegalArgumentException("Invalid activation escrow");
+            UUID.fromString(a.player);
+        }});
         d.state.tokens.forEach((id,t) -> { if (!id.equals(t.id) || t.owner==null || !Set.of("spark","awakening","ascension","divine","restoration").contains(t.kind)) throw new IllegalArgumentException("Invalid token"); });
         d.state.rituals.forEach((id,r)->{if(!id.equals(r.id) || r.offerings==null || !d.state.forges.containsKey(r.forge))throw new IllegalArgumentException("Invalid ritual escrow");});
         d.state.transfers.forEach((id,t)->{if(!id.equals(t.id) || t.player==null || t.target==null || t.stack==null)throw new IllegalArgumentException("Invalid inventory transfer");});

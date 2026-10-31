@@ -23,8 +23,10 @@ public record NaturalRuinProof(String id,String dimension,BlockPos center,int vi
         for(var tag:ruin.getList("Children").orElseGet(ListTag::new))if(tag instanceof CompoundTag child && child.getStringOr("id","").equals("soulbound:ancestral_ruin")) {
             int[] b=child.getIntArray("BB").orElse(new int[0]);if(b.length!=6)continue;
             int version=child.getIntOr("RuinVersion",1),radius=version==1?6:child.getIntOr("Radius",3);
-            if((radius!=3 && radius!=6) || b[3]-b[0]!=2*radius || b[5]-b[2]!=2*radius)continue;
-            var center=new BlockPos(b[0]+radius,b[1]+1,b[2]+radius);
+            if(radius!=3 && radius!=6)continue;
+            var center=BlockPos.of(child.getLongOr("PedestalCenter",new BlockPos(b[0]+radius,b[1]+1,b[2]+radius).asLong()));
+            if(center.getX()-radius<b[0] || center.getX()+radius>b[3] || center.getZ()-radius<b[2] || center.getZ()+radius>b[5]
+                    || center.getY()-1<b[1] || center.getY()+4>b[4])continue;
             int sx=child.getIntOr("VillageX",Math.floorDiv(center.getX()-32,16)),sz=child.getIntOr("VillageZ",Math.floorDiv(center.getZ(),16));
             if(sx!=expectedX || sz!=expectedZ)continue;
             String derived=UUID.nameUUIDFromBytes((seed+":"+dimension+":"+center.asLong()).getBytes(StandardCharsets.UTF_8)).toString();

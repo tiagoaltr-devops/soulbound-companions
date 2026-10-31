@@ -19,8 +19,8 @@ import net.minecraft.world.item.ItemStack;
 @EventBusSubscriber(modid="soulbound")
 public final class RitualService {
     private RitualService() {}
-    public static boolean busy(ServerLevel level,String forge){return AltarSavedData.get(level.getServer()).state.rituals.values().stream().anyMatch(r->r.forge.equals(forge));}
-    public static boolean locked(ServerLevel level,BlockPos pos){String key=AltarInventory.key(level,pos);return AltarSavedData.get(level.getServer()).state.rituals.values().stream().anyMatch(r->r.offerings.containsKey(key));}
+    public static boolean busy(ServerLevel level,String forge){var d=AltarSavedData.get(level.getServer());var f=d.state.forges.get(forge);return f!=null && f.activation!=null || d.state.rituals.values().stream().anyMatch(r->r.forge.equals(forge));}
+    public static boolean locked(ServerLevel level,BlockPos pos){String key=AltarInventory.key(level,pos);var d=AltarSavedData.get(level.getServer());return d.state.rituals.values().stream().anyMatch(r->r.offerings.containsKey(key)) || d.state.forges.values().stream().anyMatch(f->f.activation!=null && f.activation.offerings.containsKey(key));}
     static boolean platform(ServerPlayer p,AltarSavedData.Forge f,int rotation){
         var offset=AltarPolicy.rotate(0,2,rotation);
         return p.level().dimension().identifier().toString().equals(f.dimension) && Math.abs(p.getX()-(f.x+offset[0]+.5))<.65
@@ -48,7 +48,7 @@ public final class RitualService {
             r.offerings.put(keys.get(i),AltarInventory.encode(level,stack.split(costs.get(i).count())));
             d.state.slots.put(keys.get(i),AltarInventory.encode(level,stack));
         }
-        d.state.rituals.put(r.id,r);d.flush(s);return true;
+        d.state.rituals.put(r.id,r);d.flush(s);r.offerings.keySet().forEach(key->OfferingBlockEntity.refresh(level,key));return true;
     }
     public static int cost(String kind){return switch(kind){case "awakening"->Config.AWAKENING_XP.get();case "ascension"->Config.ASCENSION_XP.get();case "divine"->Config.DIVINE_XP.get();case "restoration"->Config.RESTORATION_XP.get();default->throw new IllegalArgumentException(kind);};}
     public static void refund(AltarSavedData d,AltarSavedData.Ritual r,net.minecraft.server.MinecraftServer server){
@@ -65,7 +65,7 @@ public final class RitualService {
             returned.put(key,AltarInventory.encode(level,stack));
         });
         f.core=r.core;d.state.slots.putAll(returned);
-        d.state.rituals.remove(r.id);d.flush(server);
+        d.state.rituals.remove(r.id);d.flush(server);r.offerings.keySet().forEach(key->OfferingBlockEntity.refresh(level,key));
     }
     @SubscribeEvent public static void started(ServerStartedEvent e){var d=AltarSavedData.get(e.getServer());for(var r:List.copyOf(d.state.rituals.values()))refund(d,r,e.getServer());}
     @SubscribeEvent public static void tick(ServerTickEvent.Post e){

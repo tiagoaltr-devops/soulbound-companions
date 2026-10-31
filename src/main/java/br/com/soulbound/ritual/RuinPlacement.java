@@ -34,11 +34,6 @@ public final class RuinPlacement extends StructurePlacement {
         if(!eligible.test(x,z))return false;
         int spacing=villages.spacing();
         int radius=(int)Math.ceil((separation+2.0*RuinSelection.MAX_CENTER_OFFSET)/(spacing*16.0))+1;
-        int rx=Math.floorDiv(x,spacing),rz=Math.floorDiv(z,spacing);
-        for(int dx=-radius;dx<=radius;dx++)for(int dz=-radius;dz<=radius;dz++) {
-            var other=villages.getPotentialStructureChunk(seed,(rx+dx)*spacing,(rz+dz)*spacing);
-            if((other.x!=x || other.z!=z) && eligible.test(other.x,other.z) && !RuinSelection.wins(seed,x,z,other.x,other.z,separation))return false;
-        }
         int cell=Math.max(512,spacing*8),cx=Math.floorDiv(x,cell),cz=Math.floorDiv(z,cell);
         long buffer=separation+2L*RuinSelection.MAX_CENTER_OFFSET;
         for(int dx=-1;dx<=1;dx++)for(int dz=-1;dz<=1;dz++) {
@@ -46,7 +41,16 @@ public final class RuinPlacement extends StructurePlacement {
             long bx=((long)x-old.x)*16,bz=((long)z-old.z)*16;
             if(bx*bx+bz*bz<buffer*buffer)return false;
         }
-        return true;
+        var distribution=new RuinSelection.Distribution(seed,separation,site->{
+            int rx=Math.floorDiv(site.x(),spacing),rz=Math.floorDiv(site.z(),spacing);
+            var neighbors=new java.util.ArrayList<RuinSelection.Site>();
+            for(int dx=-radius;dx<=radius;dx++)for(int dz=-radius;dz<=radius;dz++){
+                var other=villages.getPotentialStructureChunk(seed,(rx+dx)*spacing,(rz+dz)*spacing);
+                neighbors.add(new RuinSelection.Site(other.x,other.z));
+            }
+            return neighbors;
+        },site->eligible.test(site.x(),site.z()));
+        return distribution.selected(new RuinSelection.Site(x,z));
     }
     @Override public StructurePlacementType<?> type() { return ModAltar.PLACEMENT.get(); }
 }

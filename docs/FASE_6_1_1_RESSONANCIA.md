@@ -1,5 +1,9 @@
 # Fase 6.1.1 — Ruínas e Ressonância Ancestral
 
+> Atualização [6.1.2](FASE_6_1_2_FREQUENCIA.md): spawn mínimo de 500 blocos,
+> seleção em duas rodadas e cooldown de prova zero para testes. Os parâmetros
+> anteriores descritos abaixo documentam a entrega 6.1.1.
+
 ## Implementação
 
 Minecraft 1.21.11, NeoForge 21.11.48, Java 21 e dependências preservados.
@@ -191,7 +195,7 @@ foram reformulados.
 
 Roteiro manual:
 
-1. Execute `\.\gradlew.bat runClient` e use um mundo novo com chunks ainda inexplorados.
+1. Execute `.\gradlew.bat runClient` e use um mundo novo com chunks ainda inexplorados.
 2. Como operador, confira candidatas e depois pedestais reais/registro automático.
 3. Obtenha seu Lupus pelo fluxo normal, abra o Bastão e clique em Localizar Ruína.
 4. Observe ida/pausa/retorno, primeiro em Follow e depois em Stay. Confira UUID e
@@ -206,3 +210,36 @@ Roteiro manual:
 Aparência da integração em todos os biomas, cliques da HUD e multiplayer com pessoas
 continuam pendentes de homologação. `/locate` vanilla continua sem integração com o
 placement próprio; use a habilidade ou os diagnósticos acima.
+
+## Retomada e encerramento da implementação
+
+Na retomada, o workspace estava limpo no checkpoint `fca65a3`. A implementação Java,
+recursos e testes acima já estavam preservados nesse commit. O servidor iniciado
+anteriormente ainda estava aberto, mas seu ensaio já havia terminado com
+`RESONANCE_SERVER_CHECKS PASSED: 286 checks`. Não foi repetida a geração de vilas
+nem esse ensaio demorado. O log confirmou ida de aproximadamente 9,36 blocos em
+Follow e 9,23 em Stay, retorno, UUID/vínculo e âncora preservados, cancelamento sem
+dono, compatibilidade com a finalização do Recall e ausência de cobrança de XP.
+
+Foi conferido o índice persistente: quatro registros naturais continuavam presentes,
+com os destinos descarregados. O servidor foi salvo e encerrado pelo comando `stop`.
+Nenhum ajuste adicional em Java ou nas regras de geração foi necessário nesta retomada.
+Foi corrigida a grafia do comando `runClient` no roteiro acima.
+
+Validação final desta retomada:
+
+- `clean build --no-daemon`: **BUILD SUCCESSFUL**, com as **256 verificações** aprovadas.
+  A primeira tentativa de limpeza encontrou um JAR aberto no Windows; após encerrar
+  os daemons Gradle, o build limpo passou, sem alteração de dependências.
+- `runClient --no-daemon`: cliente carregou modelos, sons e atlas de blocos, itens,
+  partículas e interface, sem erros de carregamento identificados no log. Foi
+  encerrado normalmente após a checagem, sem abrir um mundo para homologação manual.
+- `build/libs/soulbound-1.0.0.jar`: contém a Ressonância e o índice; não contém
+  `ResonanceServerChecks`, `AncestralResonanceChecks` nem `log4j2-test.xml`.
+- Resultados anteriores de geração, leitura assíncrona de disco, filtros de
+  elegibilidade e navegação foram mantidos, sem refazer testes já aprovados.
+
+Logs: `runs/phase611-server/validation-logs/resume-final-build-retry.log`,
+`resume-client.log` e `final-native-checks.log`, no diretório ignorado de testes.
+Permanecem pendentes os testes manuais descritos acima: cliques da HUD, integração
+visual em todos os biomas, obstáculos/ameaças, estágios superiores e multiplayer real.

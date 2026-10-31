@@ -22,7 +22,7 @@ import net.neoforged.neoforge.event.server.ServerStoppedEvent;
 /** Bounded asynchronous disk discovery. No chunk generation/loading, future.join or guessed destination. */
 @EventBusSubscriber(modid="soulbound")
 public final class AncestralResonance {
-    public static final int MAX_SOURCES=256,MAX_REQUESTS=4;
+    public static final int MAX_SOURCES=512,MAX_REQUESTS=4;
     private static final Map<MinecraftServer,Map<UUID,Search>> SEARCHES=new IdentityHashMap<>();
     private static final class Search {
         final SoulboundRecord session; final InteractionHand hand; final ServerLevel level;

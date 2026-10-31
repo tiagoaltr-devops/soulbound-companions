@@ -1,6 +1,8 @@
 {
-    "textures":  {
-                     "all":  "soulbound:block/offering_altar"
-                 },
-    "parent":  "minecraft:block/cube_all"
+  "parent": "minecraft:block/cube_bottom_top",
+  "textures": {
+    "top": "soulbound:block/soul_offering_top",
+    "bottom": "soulbound:block/soul_offering_bottom",
+    "side": "soulbound:block/soul_offering_side"
+  }
 }

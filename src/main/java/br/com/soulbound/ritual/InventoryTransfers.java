@@ -33,6 +33,10 @@ public final class InventoryTransfers {
         var d=AltarSavedData.get(p.level().getServer());if(pending(d,target))return false;
         var existing=contents(d,target);boolean deposit=existing.isEmpty();
         ItemStack stack=deposit?p.getMainHandItem():AltarInventory.decode(p.level(),existing);
+        if(target.startsWith("forge/")){
+            var f=d.state.forges.get(target.substring(6));
+            if(f==null || RitualService.busy(p.level(),f.id) || !ForgeActivation.coreAllowed(f,p.getStringUUID(),stack.is(br.com.soulbound.registry.ModItems.ALTAR_ITEMS.get("reactivation_essence").get())))return ForgeService.reject(p,"state");
+        }else if(RitualService.locked(p.level(),BlockPos.of(Long.parseLong(target.substring(target.lastIndexOf(':')+1))))){return ForgeService.reject(p,"busy");}
         if(stack.isEmpty() || !deposit && p.getInventory().getFreeSlot()<0)return false;
         var t=new AltarSavedData.Transfer();t.id=UUID.randomUUID().toString();t.player=p.getStringUUID();t.target=target;t.deposit=deposit;
         t.stack=deposit?AltarInventory.encode(p.level(),stack.copyWithCount(single?1:stack.getCount())):existing;
@@ -53,7 +57,7 @@ public final class InventoryTransfers {
             int free=p.getInventory().getFreeSlot();if(free<0)return;
             p.getInventory().setItem(free,AltarInventory.decode(p.level(),t.stack));receipt(p,t.id);saveReceipt(p,t.id);
         }
-        d.state.transfers.remove(t.id);d.flush(p.level().getServer());
+        d.state.transfers.remove(t.id);d.flush(p.level().getServer());if(!t.target.startsWith("forge/"))OfferingBlockEntity.refresh(p.level(),t.target);
     }
     @SubscribeEvent public static void login(PlayerEvent.PlayerLoggedInEvent e){if(e.getEntity() instanceof ServerPlayer p)recover(p);}
     public static void recover(ServerPlayer p){var d=AltarSavedData.get(p.level().getServer());for(var t:List.copyOf(d.state.transfers.values()))if(t.player.equals(p.getStringUUID()))finish(p,d,t);}

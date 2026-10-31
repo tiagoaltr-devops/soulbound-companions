@@ -7,25 +7,29 @@ import net.minecraft.world.item.ItemStack;
 
 public final class ForgeMenu extends AbstractContainerMenu {
     private final String forgeId;
-    public final ContainerData info=new SimpleContainerData(7);
+    public final ContainerData info=new SimpleContainerData(8);
     private final Player viewer;
     public java.util.List<net.minecraft.network.chat.Component> materials=java.util.List.of();
     public net.minecraft.network.chat.Component coreName=net.minecraft.network.chat.Component.empty();
+    public net.minecraft.network.chat.Component feedback=net.minecraft.network.chat.Component.empty();
     public ForgeMenu(int id,Inventory inv){this(id,inv,(String)null);}
     public ForgeMenu(int id,Inventory inv,net.minecraft.network.RegistryFriendlyByteBuf buffer){
-        this(id,inv,(String)null);var texts=new java.util.ArrayList<net.minecraft.network.chat.Component>();
+        this(id,inv,(String)null);info.set(0,buffer.readVarInt());var texts=new java.util.ArrayList<net.minecraft.network.chat.Component>();
         for(int i=0;i<3;i++)texts.add(net.minecraft.network.chat.ComponentSerialization.STREAM_CODEC.decode(buffer));materials=java.util.List.copyOf(texts);
         coreName=net.minecraft.network.chat.ComponentSerialization.STREAM_CODEC.decode(buffer);
+        feedback=net.minecraft.network.chat.ComponentSerialization.STREAM_CODEC.decode(buffer);
     }
     public ForgeMenu(int id,Inventory inv,String forge){super(br.com.soulbound.registry.ModMenus.SOUL_FORGE.get(),id);forgeId=forge;viewer=inv.player;addDataSlots(info);}
     public AltarSavedData.Forge forge(ServerPlayer p){return AltarSavedData.get(p.level().getServer()).state.forges.get(forgeId);}
+    public boolean isForge(String id){return id.equals(forgeId);}
     @Override public boolean stillValid(Player player){
         if(!(player instanceof ServerPlayer p))return true;var f=forge(p);
         return f!=null && f.placed && f.dimension.equals(p.level().dimension().identifier().toString()) && p.distanceToSqr(f.x+.5,f.y+.5,f.z+.5)<64;
     }
     @Override public void broadcastChanges(){
         if(forgeId!=null){var s=net.neoforged.neoforge.server.ServerLifecycleHooks.getCurrentServer();if(s!=null){var f=AltarSavedData.get(s).state.forges.get(forgeId);if(f!=null){
-            info.set(0,f.owner==null?0:f.state.equals("ACTIVE")?2:f.state.equals("DESTROYED")?3:1);info.set(1,f.attempts);
+            info.set(0,ForgeActivation.view(f));info.set(1,f.attempts);
+            info.set(7,f.activation==null?0:(int)Math.min(32767,Math.max(0,(f.activation.end-s.overworld().getGameTime()+19)/20)));
             info.set(2,f.owner==null?0:(int)Math.round(ForgeService.failure(f.attempts)*10000));info.set(3,f.core.isEmpty()?0:1);
             info.set(4,(int)Math.round(br.com.soulbound.Config.FORGE_CRITICAL_CHANCE.get()*10000));
             info.set(5,0);info.set(6,br.com.soulbound.Config.RITUAL_TICKS.get()/20);
@@ -34,11 +38,11 @@ public final class ForgeMenu extends AbstractContainerMenu {
         }}}super.broadcastChanges();
     }
     @Override public boolean clickMenuButton(Player player,int id){
-        if(!(player instanceof ServerPlayer p)||!stillValid(p))return false;var f=forge(p);
+        if(!(player instanceof ServerPlayer p))return false;if(!stillValid(p))return ForgeService.reject(p,"state");if(!p.isAlive() || p.isSpectator())return ForgeService.reject(p,"permission");var f=forge(p);
         if(id==0){boolean changed=ForgeService.activate(p,f);if(changed)ForgeService.open(p,new net.minecraft.core.BlockPos(f.x,f.y,f.z));return changed;}
-        if(id==2)return RitualService.start(p,f);
-        if(id==1){if(RitualService.busy(p.level(),f.id))return false;boolean exchanged=InventoryTransfers.exchange(p,"forge/"+f.id,true);if(exchanged)ForgeService.open(p,new net.minecraft.core.BlockPos(f.x,f.y,f.z));return exchanged;}
-        return false;
+        if(id==2){if(!f.state.equals("ACTIVE") || f.activation!=null)return ForgeService.reject(p,"state");boolean started=RitualService.start(p,f);return started || ForgeService.reject(p,"ritual");}
+        if(id==1){if(!f.state.equals("ACTIVE") || f.activation!=null)return ForgeService.reject(p,"state");if(RitualService.busy(p.level(),f.id))return ForgeService.reject(p,"busy");boolean exchanged=InventoryTransfers.exchange(p,"forge/"+f.id,true);if(exchanged)ForgeService.open(p,new net.minecraft.core.BlockPos(f.x,f.y,f.z));else ForgeService.reject(p,"storage");return exchanged;}
+        return ForgeService.reject(p,"state");
     }
     @Override public ItemStack quickMoveStack(Player p,int slot){return ItemStack.EMPTY;}
 }

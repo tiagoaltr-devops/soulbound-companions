@@ -12,6 +12,10 @@ import net.minecraft.world.item.*;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.level.BlockEvent;
+import net.neoforged.neoforge.event.tick.ServerTickEvent;
+import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 
 @EventBusSubscriber(modid="soulbound")
 public final class ForgeService {
@@ -27,6 +31,9 @@ public final class ForgeService {
                 && level.getBlockState(pos).is(component==0?ModAltar.OFFERING.get():component==1?ModAltar.PLATFORM.get():ModAltar.STONE.get());});
     }
     public static void open(ServerPlayer p,BlockPos pos){
+        open(p,pos,Component.empty());
+    }
+    private static void open(ServerPlayer p,BlockPos pos,Component feedback){
         var f=at(p.level(),pos);if(f==null)return;
         var record=f.owner==null?null:br.com.soulbound.companion.identity.SoulboundSavedData.get(p.level().getServer()).find(UUID.fromString(f.owner));
         String owner=f.owner==null?"—":record==null?f.owner:record.ownerLastKnownName();
@@ -36,28 +43,98 @@ public final class ForgeService {
         var materials=new ArrayList<Component>();
         for(var cost:costs){var item=net.minecraft.core.registries.BuiltInRegistries.ITEM.getValue(net.minecraft.resources.Identifier.parse(cost.item()));materials.add(Component.literal(cost.count()+" × ").append(item.getName()));}
         Component coreName=core.isEmpty()?Component.translatable("menu.soulbound.empty"):core.getHoverName();
-        p.openMenu(new SimpleMenuProvider((id,inv,ignored)->new ForgeMenu(id,inv,f.id),Component.translatable("menu.soulbound.forge",owner)),buffer->{for(var text:materials)net.minecraft.network.chat.ComponentSerialization.STREAM_CODEC.encode(buffer,text);net.minecraft.network.chat.ComponentSerialization.STREAM_CODEC.encode(buffer,coreName);});
+        Component title=f.owner==null?Component.translatable("block.soulbound.soul_forge"):Component.translatable("menu.soulbound.forge",owner);
+        p.openMenu(new SimpleMenuProvider((id,inv,ignored)->new ForgeMenu(id,inv,f.id),title),buffer->{buffer.writeVarInt(ForgeActivation.view(f));for(var text:materials)net.minecraft.network.chat.ComponentSerialization.STREAM_CODEC.encode(buffer,text);net.minecraft.network.chat.ComponentSerialization.STREAM_CODEC.encode(buffer,coreName);net.minecraft.network.chat.ComponentSerialization.STREAM_CODEC.encode(buffer,feedback);});
+    }
+    public static boolean reject(ServerPlayer p,String reason){return reject(p,Component.translatable("message.soulbound.forge_error."+reason));}
+    private static boolean reject(ServerPlayer p,Component message){
+        p.displayClientMessage(message,false);
+        if(p.containerMenu instanceof ForgeMenu menu && menu.stillValid(p)){
+            var f=menu.forge(p);open(p,new BlockPos(f.x,f.y,f.z),message);
+        }
+        return false;
     }
     public static boolean activate(ServerPlayer p,AltarSavedData.Forge f){
         var level=p.level();var d=AltarSavedData.get(level.getServer());
+        if(!p.isAlive() || p.isSpectator())return reject(p,"permission");
+        String reason=ForgeActivation.rejection(f,p.getStringUUID());if(reason!=null)return reject(p,reason);
+        if(RitualService.busy(level,f.id))return reject(p,"busy");
         int rotation=rotation(level,new BlockPos(f.x,f.y,f.z));
-        if(!f.placed || f.state.equals("DESTROYED") || f.state.equals("ACTIVE") || f.owner!=null && !f.owner.equals(p.getStringUUID()) || rotation<0)return false;
+        if(rotation<0){
+            for(int turn=0;turn<4;turn++){
+                var platform=AltarPolicy.rotate(0,2,turn);var center=new BlockPos(f.x,f.y,f.z);
+                if(!level.hasChunkAt(center.offset(platform[0],0,platform[1])) || !level.getBlockState(center.offset(platform[0],0,platform[1])).is(ModAltar.PLATFORM.get()))continue;
+                for(var offset:new int[][]{{0,-2},{-2,0},{2,0}}){var v=AltarPolicy.rotate(offset[0],offset[1],turn);var pos=center.offset(v[0],0,v[1]);
+                    if(!level.hasChunkAt(pos) || !level.getBlockState(pos).is(ModAltar.OFFERING.get()))return reject(p,"altar_missing");}
+            }
+            return reject(p,"structure");
+        }
         boolean first=f.owner==null;
         var costs=RitualDefinitions.activation(level);
         var keys=offeringKeys(level,f,rotation);
-        for(int i=0;i<3;i++)if(!costs.get(i).matches(AltarInventory.decode(level,d.state.slots.get(keys.get(i)))))return false;
+        if(keys.stream().anyMatch(key->InventoryTransfers.pending(d,key)) || InventoryTransfers.pending(d,"forge/"+f.id))return reject(p,"transfer");
+        for(int i=0;i<3;i++)if(!costs.get(i).matches(AltarInventory.decode(level,d.state.slots.get(keys.get(i))))){
+            var item=net.minecraft.core.registries.BuiltInRegistries.ITEM.getValue(net.minecraft.resources.Identifier.parse(costs.get(i).item()));
+            return reject(p,Component.translatable("message.soulbound.forge_error.offering",Component.translatable("menu.soulbound.offering_position."+i),costs.get(i).count(),item.getName()));
+        }
         var essence=AltarInventory.decode(level,f.core);
-        if(!first && !essence.is(ModItems.ALTAR_ITEMS.get("reactivation_essence").get()))return false;
+        if(!first && essence.isEmpty() && p.getMainHandItem().is(ModItems.ALTAR_ITEMS.get("reactivation_essence").get())){
+            if(!InventoryTransfers.exchange(p,"forge/"+f.id,true))return reject(p,"transfer");essence=AltarInventory.decode(level,f.core);
+        }
+        if(!first && !essence.is(ModItems.ALTAR_ITEMS.get("reactivation_essence").get()))return reject(p,"essence");
         var result=AltarPolicy.resolveForge(first,f.attempts,p.getRandom().nextDouble(),p.getRandom().nextDouble(),failure(f.attempts),br.com.soulbound.Config.FORGE_CRITICAL_CHANCE.get());
-        boolean destroyed=result.state().equals("DESTROYED");
-        // Persist the draw and wear before publishing the result. No subsequent random draw is replayed.
-        f.attempts=result.attempts();
-        f.owner=first?p.getStringUUID():f.owner;f.state=result.state();
-        for(int i=0;i<3;i++){var stack=AltarInventory.decode(level,d.state.slots.get(keys.get(i)));stack.shrink(costs.get(i).count());d.state.slots.put(keys.get(i),AltarInventory.encode(level,stack));}
+        var a=new AltarSavedData.Activation();a.player=p.getStringUUID();a.end=level.getServer().overworld().getGameTime()+ForgeActivation.DURATION;
+        a.rotation=rotation;a.result=result.state();a.attempts=result.attempts();
+        var remainders=new HashMap<String,String>();
+        for(int i=0;i<3;i++){var stack=AltarInventory.decode(level,d.state.slots.get(keys.get(i)));a.offerings.put(keys.get(i),AltarInventory.encode(level,stack.split(costs.get(i).count())));remainders.put(keys.get(i),AltarInventory.encode(level,stack));}
+        if(!first)a.core=AltarInventory.encode(level,essence.copyWithCount(1));
+        if(!ForgeActivation.begin(d,f,a,remainders))return reject(p,"busy");
         if(!first){essence.shrink(1);f.core=AltarInventory.encode(level,essence);}
         d.flush(level.getServer());
-        if(destroyed){level.removeBlock(new BlockPos(f.x,f.y,f.z),false);f.placed=false;d.flush(level.getServer());}
-        p.displayClientMessage(Component.translatable("message.soulbound.forge."+f.state.toLowerCase(Locale.ROOT)),false);return true;
+        a.offerings.keySet().forEach(key->OfferingBlockEntity.refresh(level,key));
+        level.playSound(null,new BlockPos(f.x,f.y,f.z),SoundEvents.BEACON_ACTIVATE,SoundSource.BLOCKS,.7f,1.2f);
+        p.displayClientMessage(Component.translatable("message.soulbound.forge_start"),false);return true;
+    }
+    private static void refund(net.minecraft.server.MinecraftServer server,ServerLevel level,AltarSavedData d,AltarSavedData.Forge f){
+        var a=f.activation;
+        a.offerings.forEach((key,value)->{
+            var stack=AltarInventory.decode(level,value);var rest=AltarInventory.decode(level,d.state.slots.get(key));
+            if(!rest.isEmpty() && !ItemStack.isSameItemSameComponents(stack,rest))throw new IllegalStateException("Activation escrow slot occupied");
+            stack.grow(rest.getCount());d.state.slots.put(key,AltarInventory.encode(level,stack));
+        });
+        if(!a.core.isEmpty()){
+            var stack=AltarInventory.decode(level,a.core);var rest=AltarInventory.decode(level,f.core);
+            if(!rest.isEmpty() && !ItemStack.isSameItemSameComponents(stack,rest))throw new IllegalStateException("Activation core occupied");
+            stack.grow(rest.getCount());f.core=AltarInventory.encode(level,stack);
+        }
+        f.activation=null;d.flush(server);a.offerings.keySet().forEach(key->OfferingBlockEntity.refresh(level,key));
+        var p=server.getPlayerList().getPlayer(UUID.fromString(a.player));if(p!=null)reject(p,"cancelled");
+    }
+    @SubscribeEvent public static void tick(ServerTickEvent.Post event){
+        var server=event.getServer();var d=AltarSavedData.get(server);long now=server.overworld().getGameTime();
+        for(var f:d.state.forges.values()){
+            if(f.activation==null)continue;
+            var level=server.getLevel(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.DIMENSION,net.minecraft.resources.Identifier.parse(f.dimension)));
+            var pos=new BlockPos(f.x,f.y,f.z);if(level==null)continue;
+            // Resume persisted work when all relevant chunks are available; never force-load them.
+            boolean loaded=true;for(int x=-2;x<=2;x++)for(int z=-2;z<=2;z++)loaded &= level.hasChunkAt(pos.offset(x,0,z));
+            if(!loaded)continue;
+            if(!f.placed || rotation(level,pos)!=f.activation.rotation){refund(server,level,d,f);continue;}
+            if(now<f.activation.end){
+                if(now%10==0)level.sendParticles(ParticleTypes.SOUL,f.x+.5,f.y+1.3,f.z+.5,f.activation.end-now<60?8:3,.35,.45,.35,.015);
+                continue;
+            }
+            boolean first=f.owner==null;var completed=ForgeActivation.complete(f,now);if(completed==null)continue;
+            d.flush(server);
+            boolean success=f.state.equals("ACTIVE"),critical=f.state.equals("DESTROYED");
+            if(critical){level.removeBlock(pos,false);f.placed=false;d.flush(server);}
+            level.sendParticles(success?ParticleTypes.SOUL_FIRE_FLAME:ParticleTypes.WITCH,f.x+.5,f.y+1.4,f.z+.5,critical?40:24,.6,.6,.6,.04);
+            if(success)for(int y=0;y<5;y++)level.sendParticles(ParticleTypes.SOUL,f.x+.5,f.y+1+y*.4,f.z+.5,4,.12,.12,.12,.02);
+            level.playSound(null,pos,success?SoundEvents.BEACON_POWER_SELECT:SoundEvents.GLASS_BREAK,SoundSource.BLOCKS,critical?1.5f:.9f,critical?.65f:1f);
+            var p=server.getPlayerList().getPlayer(UUID.fromString(completed.player));
+            if(p!=null)p.displayClientMessage(Component.translatable(first?"message.soulbound.forge_awakened":"message.soulbound.forge."+f.state.toLowerCase(Locale.ROOT)),false);
+            for(var viewer:server.getPlayerList().getPlayers())if(viewer.containerMenu instanceof ForgeMenu menu && menu.isForge(f.id) && menu.stillValid(viewer))open(viewer,pos);
+        }
     }
     public static List<String> offeringKeys(ServerLevel level,AltarSavedData.Forge f,int rotation){
         var keys=new ArrayList<String>();for(var offset:new int[][]{{0,-2},{-2,0},{2,0}}){var v=AltarPolicy.rotate(offset[0],offset[1],rotation);keys.add(AltarInventory.key(level,new BlockPos(f.x+v[0],f.y,f.z+v[1])));}return keys;

@@ -24,7 +24,7 @@ import net.minecraft.world.level.levelgen.structure.templatesystem.StructurePlac
 
 public final class RuinStructure extends Structure {
     public static final MapCodec<RuinStructure> CODEC = RecordCodecBuilder.mapCodec(i -> i.group(
-            settingsCodec(i),Codec.intRange(2000,32000).optionalFieldOf("minimum_spawn_distance",2000).forGetter(s -> s.minimumSpawnDistance)
+            settingsCodec(i),Codec.intRange(500,32000).optionalFieldOf("minimum_spawn_distance",500).forGetter(s -> s.minimumSpawnDistance)
     ).apply(i,RuinStructure::new));
     private final int minimumSpawnDistance;
     private static final List<net.minecraft.world.level.block.Block> FUNCTIONAL=List.of(Blocks.BELL,Blocks.BLAST_FURNACE,Blocks.BREWING_STAND,
@@ -32,7 +32,7 @@ public final class RuinStructure extends Structure {
             Blocks.SMITHING_TABLE,Blocks.SMOKER,Blocks.STONECUTTER,Blocks.BARREL,
             Blocks.WHITE_BED,Blocks.ORANGE_BED,Blocks.MAGENTA_BED,Blocks.LIGHT_BLUE_BED,Blocks.YELLOW_BED,Blocks.LIME_BED,Blocks.PINK_BED,Blocks.GRAY_BED,
             Blocks.LIGHT_GRAY_BED,Blocks.CYAN_BED,Blocks.PURPLE_BED,Blocks.BLUE_BED,Blocks.BROWN_BED,Blocks.GREEN_BED,Blocks.RED_BED,Blocks.BLACK_BED);
-    public RuinStructure(StructureSettings settings) { this(settings,2000); }
+    public RuinStructure(StructureSettings settings) { this(settings,500); }
     public RuinStructure(StructureSettings settings,int minimum) { super(settings);minimumSpawnDistance=minimum; }
     @Override protected Optional<GenerationStub> findGenerationPoint(GenerationContext c) {
         if(!selected(c.chunkGenerator(),c.randomState(),c.registryAccess(),c.heightAccessor(),c.seed(),c.chunkPos()))return Optional.empty();
@@ -46,7 +46,7 @@ public final class RuinStructure extends Structure {
             var site=site(c,village);if(site==null){com.mojang.logging.LogUtils.getLogger().debug("No safe decorative ruin site in village {} at {}",key,c.chunkPos());continue;}
             var center=site.center;
             String id=java.util.UUID.nameUUIDFromBytes((c.seed()+":minecraft:overworld:"+center.asLong()).getBytes(java.nio.charset.StandardCharsets.UTF_8)).toString();
-            return Optional.of(new GenerationStub(center,builder -> builder.addPiece(new Piece(center,id,c.chunkPos(),key,site.radius,minimumSpawnDistance,site.protectedBlocks))));
+            return Optional.of(new GenerationStub(center,builder -> builder.addPiece(new Piece(center,id,c.chunkPos(),key,site.radius,minimumSpawnDistance,site.protectedBlocks,site.bells))));
         }
         return Optional.empty();
     }
@@ -61,7 +61,7 @@ public final class RuinStructure extends Structure {
             return villageSet.structures().stream().anyMatch(entry->entry.structure().value().biomes().contains(biome));
         });
     }
-    private record Site(BlockPos center,int radius,long[] protectedBlocks) {}
+    private record Site(BlockPos center,int radius,long[] protectedBlocks,long[] bells) {}
     public static boolean decorativeTemplate(String name) {
         return name.startsWith("minecraft:village/") && (name.contains("fountain") || name.contains("/town_centers/") && name.contains("meeting_point"));
     }
@@ -98,7 +98,10 @@ public final class RuinStructure extends Structure {
                         clear=false;break;
                     }
                 }
-                if(clear)return new Site(center,radius,protectedPositions.stream().mapToLong(BlockPos::asLong).toArray());
+                if(clear){
+                    var bells=c.structureTemplateManager().getOrCreate(single.getTemplateLocation()).filterBlocks(chosen.getPosition(),new StructurePlaceSettings().setRotation(chosen.getRotation()),Blocks.BELL);
+                    return new Site(center,radius,protectedPositions.stream().mapToLong(BlockPos::asLong).toArray(),bells.stream().mapToLong(info->info.pos().asLong()).toArray());
+                }
             }
         }
         return null;
@@ -109,25 +112,31 @@ public final class RuinStructure extends Structure {
         public final int version,sourceX,sourceZ,radius,spawnDistance;
         public final String villageType;
         private final long[] protectedBlocks;
-        public Piece(BlockPos center,String id,ChunkPos source,String village,int size,int minimum,long[] protectedPositions) {
-            super(ModAltar.PIECE.get(),0,new BoundingBox(center.getX()-size,center.getY()-1,center.getZ()-size,center.getX()+size,center.getY()+4,center.getZ()+size));
+        private final long[] bells;
+        private final BlockPos pedestalCenter;
+        public Piece(BlockPos center,String id,ChunkPos source,String village,int size,int minimum,long[] protectedPositions,long[] bellPositions) {
+            super(ModAltar.PIECE.get(),0,RuinSelection.replacementBounds(center,size,bellPositions));
             ruinId=id;version=2;sourceX=source.x;sourceZ=source.z;radius=size;spawnDistance=minimum;villageType=village;protectedBlocks=protectedPositions;
+            pedestalCenter=center.immutable();bells=bellPositions.clone();
         }
         public Piece(CompoundTag tag) {
             super(ModAltar.PIECE.get(),tag);ruinId=tag.getStringOr("RuinId","");version=tag.getIntOr("RuinVersion",1);
             radius=version==1?6:tag.getIntOr("Radius",3);spawnDistance=tag.getIntOr("MinimumSpawn",2000);
             sourceX=tag.getIntOr("VillageX",Math.floorDiv(boundingBox.minX()+radius-32,16));sourceZ=tag.getIntOr("VillageZ",Math.floorDiv(boundingBox.minZ()+radius,16));
             villageType=tag.getStringOr("VillageType","");protectedBlocks=tag.getLongArray("ProtectedBlocks").orElse(new long[0]);
+            pedestalCenter=BlockPos.of(tag.getLongOr("PedestalCenter",new BlockPos(boundingBox.minX()+radius,boundingBox.minY()+1,boundingBox.minZ()+radius).asLong()));
+            bells=tag.getLongArray("ReplacedBells").orElse(new long[0]);
         }
         @Override protected void addAdditionalSaveData(StructurePieceSerializationContext context, CompoundTag tag) {
             tag.putString("RuinId",ruinId);tag.putInt("RuinVersion",version);tag.putInt("VillageX",sourceX);tag.putInt("VillageZ",sourceZ);tag.putInt("Radius",radius);
             tag.putInt("MinimumSpawn",spawnDistance);tag.putString("VillageType",villageType);tag.putLongArray("ProtectedBlocks",protectedBlocks);
+            tag.putLong("PedestalCenter",pedestalCenter.asLong());tag.putLongArray("ReplacedBells",bells);
         }
-        public BlockPos center(){return new BlockPos(boundingBox.minX()+radius,boundingBox.minY()+1,boundingBox.minZ()+radius);}
+        public BlockPos center(){return pedestalCenter;}
         @Override public void postProcess(WorldGenLevel world, StructureManager manager, ChunkGenerator generator,
                 RandomSource random, BoundingBox box, ChunkPos chunk, BlockPos origin) {
             if(!(world instanceof net.minecraft.server.level.WorldGenRegion))return;
-            int x=boundingBox.minX()+radius,y=boundingBox.minY(),z=boundingBox.minZ()+radius;
+            int x=pedestalCenter.getX(),y=pedestalCenter.getY()-1,z=pedestalCenter.getZ();
             var center = new BlockPos(x,y+1,z);
             var spawn = world.getLevel().getRespawnData().pos();
             if (!world.getLevel().dimension().equals(Level.OVERWORLD) || horizontalSquared(center,spawn)<(long)spawnDistance*spawnDistance) return;
@@ -141,6 +150,8 @@ public final class RuinStructure extends Structure {
                 }
             }
             if (!village) return;
+            // Exact rotated template positions only, in this new chunk's worldgen pass.
+            for(long value:bells){var bell=BlockPos.of(value);if(RuinSelection.replacesBell(bell,box,bells) && world.getBlockState(bell).is(Blocks.BELL))world.setBlock(bell,Blocks.AIR.defaultBlockState(),2);}
             var ancient=villageType.contains("desert")?Blocks.CUT_SANDSTONE:villageType.contains("savanna")?Blocks.TERRACOTTA:Blocks.MOSSY_STONE_BRICKS;
             var cracked=villageType.contains("desert")?Blocks.SMOOTH_SANDSTONE:villageType.contains("taiga") || villageType.contains("snowy")?Blocks.COBBLESTONE:Blocks.CRACKED_STONE_BRICKS;
             for(int dx=-radius;dx<=radius;dx++) for(int dz=-radius;dz<=radius;dz++) {

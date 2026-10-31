@@ -3,6 +3,7 @@ package br.com.soulbound.ritual;
 /** Pure server policies shared by trials, forge confirmations and automated checks. */
 public final class AltarPolicy {
     private AltarPolicy() {}
+    public static boolean trialCoolingDown(long end,long now,int configuredTicks){return configuredTicks>0 && end>now;}
     public record ForgeResult(String state,int attempts){}
     public static ForgeResult resolveForge(boolean first,int previousAttempts,double failureRoll,double criticalRoll,double failureChance,double criticalChance){
         if(first)return new ForgeResult("ACTIVE",previousAttempts);

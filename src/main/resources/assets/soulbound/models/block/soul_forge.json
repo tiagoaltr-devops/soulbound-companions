@@ -1,6 +1,8 @@
 {
-    "textures":  {
-                     "all":  "soulbound:block/soul_forge"
-                 },
-    "parent":  "minecraft:block/cube_all"
+  "parent": "minecraft:block/cube_bottom_top",
+  "textures": {
+    "top": "soulbound:block/soul_forge_top",
+    "bottom": "soulbound:block/soul_forge_bottom",
+    "side": "soulbound:block/soul_forge_side"
+  }
 }

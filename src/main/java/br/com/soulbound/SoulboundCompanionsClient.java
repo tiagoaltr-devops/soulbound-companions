@@ -30,6 +30,7 @@ public class SoulboundCompanionsClient {
     }
 
     private void registerRenderers(EntityRenderersEvent.RegisterRenderers event) {
+        event.registerBlockEntityRenderer(br.com.soulbound.registry.ModAltar.OFFERING_DISPLAY.get(),br.com.soulbound.client.OfferingRenderer::new);
         event.registerEntityRenderer(ModEntities.LUPUS_COMPANION.get(), LupusCompanionRenderer::new);
         event.registerEntityRenderer(ModEntities.SPIRIT_GUARDIAN.get(), br.com.soulbound.client.SpiritGuardianRenderer::new);
     }

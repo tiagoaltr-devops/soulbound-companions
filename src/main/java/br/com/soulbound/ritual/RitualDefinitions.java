@@ -10,7 +10,7 @@ import net.minecraft.world.item.ItemStack;
 /** Resource-manager lookups respect datapack overrides and /reload; only performed at confirmation. */
 public final class RitualDefinitions {
     public record Cost(String item,int count){
-        public boolean matches(ItemStack stack){return count>0 && stack.getCount()>=count && BuiltInRegistries.ITEM.getKey(stack.getItem()).toString().equals(item);}
+        public boolean matches(ItemStack stack){return ForgeActivation.offeringMatches(BuiltInRegistries.ITEM.getKey(stack.getItem()).toString(),stack.getCount(),item,count);}
     }
     public record Definition(String kind,List<Cost> offerings){}
     private RitualDefinitions() {}

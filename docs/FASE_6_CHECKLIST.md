@@ -1,5 +1,28 @@
 # Fase 6 — Checklist de homologação
 
+## Atualização 6.3.1
+
+Ativação de 15 segundos, HUD contextual, apresentação das oferendas e efeitos
+implementados; build com 330 verificações aprovado. Homologação visual/rede pendente:
+[roteiro da Fase 6.3.1](FASE_6_3_1_ATIVACAO.md).
+
+## Atualização 6.1.3
+
+Ressonância, acesso à ruína natural, prova e Centelha homologados pelo jogador.
+Ajustes novos: raio de 5.000 e remoção do sino somente da praça substituída em
+worldgen novo. Build aprovado com 288 verificações. Homologação dos ajustes e
+da Forja: [checklist curto da Fase 6.3](FASE_6_1_3_FORJA.md).
+
+## Atualização 6.1.2
+
+- [x] Build incremental com 264 verificações aprovadas.
+- [x] Duas rodadas: 164 → 266 candidatas sintéticas selecionadas, sem perder as anteriores.
+- [x] Testes de separação, ausência de duplicatas e limite de 500 blocos do spawn.
+- [x] Cooldown zero aceita repetição e ignora espera antiga; valores positivos preservados.
+- [!] Homologar frequência em chunks novos e repetição imediata da prova no jogo.
+
+Resumo em [FASE_6_1_2_FREQUENCIA.md](FASE_6_1_2_FREQUENCIA.md).
+
 ## Atualização 6.1.1
 
 - [x] Build limpo com 256 verificações: 221 anteriores e 35 de geração/ressonância.
@@ -10,6 +33,11 @@
 - [x] Reconstrução por leitura de disco com destinos descarregados e sem interação inicial.
 - [x] Navegação real com jogador simulado: ida/retorno Follow e Stay, UUID e âncora,
   cancelamento sem dono e compatibilidade com a finalização do Recall.
+- [x] Retomada do checkpoint preservado, sem refazer a geração ou a navegação já aprovadas.
+- [x] Servidor anterior salvo e encerrado; log final do ensaio nativo confirmou 286 verificações.
+- [x] Build final limpo da retomada: 256 verificações aprovadas.
+- [x] Cliente da retomada carregou recursos e foi encerrado após a checagem.
+- [x] JAR final contém a funcionalidade e exclui classes/configuração de testes.
 - [!] Homologar cliques de Localizar Ruína, aparência, obstáculos e ameaças com pessoas.
 - [!] Homologar disponibilidade em Junior/Pleno/God e multiplayer com conclusões distintas.
 - [!] Validar parâmetros não padrão e integração visual de todas as variantes de vila.

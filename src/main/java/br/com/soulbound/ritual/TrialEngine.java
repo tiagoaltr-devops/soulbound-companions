@@ -40,7 +40,7 @@ public final class TrialEngine {
         var s=p.level().getServer();var d=AltarSavedData.get(s);long now=s.overworld().getGameTime();
         var record=SoulboundSavedData.get(s).find(p.getUUID());
         if (!"NATURAL_WORLDGEN".equals(r.origin) || !"INTACT".equals(r.integrity) || !p.isAlive() || p.isSpectator() || !inside(p,r) || r.trial!=null || r.completed.contains(p.getStringUUID())
-                || r.cooldowns.getOrDefault(p.getStringUUID(),0L)>now || record==null
+                || AltarPolicy.trialCoolingDown(r.cooldowns.getOrDefault(p.getStringUUID(),0L),now,br.com.soulbound.Config.TRIAL_COOLDOWN.get()) || record==null
                 || record.companionStatus()!=CompanionStatus.ACTIVE || !exclusive(s,r,p.getStringUUID())) return false;
         var t=new AltarSavedData.Trial();t.player=p.getStringUUID();t.run=UUID.randomUUID().toString();t.started=now;
         t.sequence=new int[AltarPolicy.symbols(r.completions)];for(int i=0;i<t.sequence.length;i++)t.sequence[i]=p.getRandom().nextInt(7);

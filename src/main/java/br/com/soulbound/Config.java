@@ -26,7 +26,7 @@ public final class Config {
     public static final ModConfigSpec.IntValue ASCENSION_XP = BUILDER.defineInRange("ascensionLevels",45,0,1000);
     public static final ModConfigSpec.IntValue DIVINE_XP = BUILDER.defineInRange("divineLevels",60,0,1000);
     public static final ModConfigSpec.IntValue RESTORATION_XP = BUILDER.defineInRange("restorationLevels",25,0,1000);
-    public static final ModConfigSpec.IntValue TRIAL_COOLDOWN = BUILDER.defineInRange("trialCooldownTicks",36000,20,86400000);
+    public static final ModConfigSpec.IntValue TRIAL_COOLDOWN = BUILDER.comment("Trial retry delay in ticks; 0 disables old and new trial cooldowns for testing.").defineInRange("trialCooldownTicks",0,0,86400000);
     public static final ModConfigSpec.IntValue MAX_SIMULTANEOUS_GUARDIANS = BUILDER.defineInRange("maxSimultaneousGuardians",4,1,12);
     public static final ModConfigSpec.DoubleValue FORGE_FAILURE_1 = BUILDER.defineInRange("forgeFailureAttempt1",.01,0,1);
     public static final ModConfigSpec.DoubleValue FORGE_FAILURE_2 = BUILDER.defineInRange("forgeFailureAttempt2",.20,0,1);
@@ -34,7 +34,7 @@ public final class Config {
     public static final ModConfigSpec.DoubleValue FORGE_FAILURE_4 = BUILDER.defineInRange("forgeFailureAttempt4",.60,0,1);
     public static final ModConfigSpec.DoubleValue FORGE_FAILURE_5 = BUILDER.defineInRange("forgeFailureAttempt5Plus",.80,0,1);
     public static final ModConfigSpec.DoubleValue FORGE_CRITICAL_CHANCE = BUILDER.defineInRange("forgeCriticalGivenFailure",.25,0,1);
-    public static final ModConfigSpec.IntValue RESONANCE_RADIUS=BUILDER.defineInRange("resonanceRadius",4096,1000,12000);
+    public static final ModConfigSpec.IntValue RESONANCE_RADIUS=BUILDER.defineInRange("resonanceRadius",5000,1000,5000);
     public static final ModConfigSpec.IntValue RESONANCE_COOLDOWN=BUILDER.defineInRange("resonanceCooldownTicks",600,20,12000);
     public static final ModConfigSpec SPEC = BUILDER.build();
 

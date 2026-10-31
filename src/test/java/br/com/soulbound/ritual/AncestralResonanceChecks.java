@@ -32,6 +32,16 @@ public final class AncestralResonanceChecks {
         var noVillage=src.copy();noVillage.getCompound("structures").orElseThrow().getCompound("starts").orElseThrow().remove("minecraft:village_plains");
         require(NaturalRuinProof.fromSource(noVillage,seed,dimension,200,200).isEmpty(),"False-positive ruin start with no actual village rejected");
         require(NaturalRuinProof.fromSource(src,seed+1,dimension,200,200).isEmpty(),"Wrong seed identity rejected");
+        var extended=src.copy();var extendedPiece=extended.getCompound("structures").orElseThrow().getCompound("starts").orElseThrow().getCompound("soulbound:ancestral_ruin").orElseThrow().getList("Children").orElseThrow().getCompound(0).orElseThrow();
+        extendedPiece.putLong("PedestalCenter",center.asLong());extendedPiece.putIntArray("BB",new int[]{3190,70,3200,3220,78,3220});
+        require(NaturalRuinProof.fromSource(extended,seed,dimension,200,200).orElseThrow().equals(proof),"Bell cleanup bounds preserve physical identity and center");
+        var bell=center.offset(12,2,0);long[] bells={bell.asLong()};
+        var bounds=RuinSelection.replacementBounds(center,3,bells);
+        require(bounds.isInside(bell) && bounds.isInside(center.below()),"Worldgen bounds include plaza bell outside ruin footprint");
+        require(RuinSelection.replacesBell(bell,bounds,bells),"Exact plaza template bell selected");
+        require(!RuinSelection.replacesBell(bell.east(),bounds,bells),"Nearby unrelated bell never selected");
+        require(!RuinSelection.replacesBell(bell,new net.minecraft.world.level.levelgen.structure.BoundingBox(0,0,0,15,255,15),bells),"Bell removal limited to current chunk pass");
+        require(!RuinSelection.replacesBell(bell,bounds,new long[0]),"Legacy pieces do not gain bell removal");
         var legacySource=src.copy();var legacyChild=legacySource.getCompound("structures").orElseThrow().getCompound("starts").orElseThrow().getCompound("soulbound:ancestral_ruin").orElseThrow().getList("Children").orElseThrow().getCompound(0).orElseThrow();
         legacyChild.remove("RuinVersion");legacyChild.remove("RuinId");legacyChild.remove("VillageX");legacyChild.remove("VillageZ");legacyChild.putIntArray("BB",new int[]{3234,70,3202,3246,75,3214});
         var oldProof=NaturalRuinProof.fromSource(legacySource,seed,dimension,200,200).orElseThrow();
@@ -45,6 +55,10 @@ public final class AncestralResonanceChecks {
         require(RuinIndex.eligible(near,dimension,player),"Temporary occupation and cooldown remain locatable");
         near.completed.add(player.toString());require(RuinIndex.nearest(ledger,dimension,BlockPos.ZERO,player,1000).orElseThrow()==far,"Skip completed target and find next");
         far.integrity="PERMANENTLY_INVALID";require(RuinIndex.nearest(ledger,dimension,BlockPos.ZERO,player,1000).isEmpty(),"Skip permanently invalid and artificial targets");
+        var edge=ruin("edge",5000,dimension);ledger.state.ruins.put(edge.id,edge);
+        require(RuinIndex.nearest(ledger,dimension,BlockPos.ZERO,player,5000).orElseThrow()==edge,"Natural unvisited ruin at 5000 horizontal blocks is eligible");
+        edge.x=5001;require(RuinIndex.nearest(ledger,dimension,BlockPos.ZERO,player,5000).isEmpty(),"Beyond 5000 is excluded");
+        edge.x=4999;edge.completed.add(player.toString());require(RuinIndex.nearest(ledger,dimension,BlockPos.ZERO,player,5000).isEmpty(),"Completion remains owner-specific at long range");
         var legacy=ruin("legacy",5,dimension);legacy.origin="LEGACY_UNVERIFIED";require(!RuinIndex.eligible(legacy,dimension,player),"Legacy must be physically verified before discovery");
         ledger.progress(player).resonanceCooldownEnd=600;
         var decoded=AltarSavedData.CODEC.parse(JsonOps.INSTANCE,AltarSavedData.CODEC.encodeStart(JsonOps.INSTANCE,ledger).getOrThrow()).getOrThrow();
@@ -78,8 +92,31 @@ public final class AncestralResonanceChecks {
             if(dx*dx+dz*dz<(1000+256L)*(1000+256L))separated=false;
         }
         require(separated,"Pairwise separation including two maximum center displacements");
+        var distribution=new RuinSelection.Distribution(seed,1000,site->{
+            var neighbors=new ArrayList<RuinSelection.Site>();
+            for(int dx=-4;dx<=4;dx++)for(int dz=-4;dz<=4;dz++)neighbors.add(new RuinSelection.Site(site.x()+dx*34,site.z()+dz*34));
+            return neighbors;
+        },site->true);
+        var denser=new ArrayList<RuinSelection.Site>();
+        for(int x=-30;x<=30;x++)for(int z=-30;z<=30;z++){
+            var site=new RuinSelection.Site(x*34,z*34);if(distribution.selected(site))denser.add(site);
+        }
+        require(denser.size()>selected*1.4,"Second round significantly increases selection, not just changing constants");
+        require(chosen.stream().allMatch(p->denser.contains(new RuinSelection.Site(p[0],p[1]))),"All previous first-round winners retained");
+        boolean newSeparated=true;
+        for(int i=0;i<denser.size();i++)for(int j=i+1;j<denser.size();j++){
+            long dx=(denser.get(i).x()-denser.get(j).x())*16L,dz=(denser.get(i).z()-denser.get(j).z())*16L;
+            if(dx*dx+dz*dz<(1000+256L)*(1000+256L))newSeparated=false;
+        }
+        require(newSeparated,"Both rounds preserve 1000 blocks after maximum center displacements");
+        require(new HashSet<>(denser).size()==denser.size(),"No duplicate village candidates");
+        require(RuinSelection.distanceSquared(new BlockPos(500,0,0),BlockPos.ZERO)==250000,"New spawn boundary is 500 blocks");
+        require(!AltarPolicy.trialCoolingDown(Long.MAX_VALUE,100,0),"Zero bypasses persisted old trial cooldowns");
+        require(AltarPolicy.trialCoolingDown(200,100,36000),"Positive trial cooldown can be reenabled");
+        require(!AltarPolicy.trialCoolingDown(100,100,36000),"Expired positive cooldown permits retry");
         require(RuinSelection.distanceSquared(new BlockPos(2000,0,0),BlockPos.ZERO)==4000000,"Spawn barrier boundary");
         System.out.println("Ancestral resonance checks passed: "+checks+"; synthetic village candidates selected="+selected+"/3721");
+        System.out.println("Phase 6.1.2 frequency comparison: "+selected+" -> "+denser.size()+" / 3721 candidates (one seed, no chunks generated)");
     }
     private static AltarSavedData.Ruin ruin(String id,int x,String dimension){var r=new AltarSavedData.Ruin();r.id=id;r.dimension=dimension;r.x=x;r.origin="NATURAL_WORLDGEN";r.integrity="INTACT";return r;}
     private static CompoundTag physical(BlockPos pos,String id,boolean stamped){
