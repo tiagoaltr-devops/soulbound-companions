@@ -82,5 +82,6 @@ public final class BabyCompanionModel extends EntityModel<BabyCompanionRenderSta
         leftArm.zRot -= discovery * 0.9F;
         rightArm.zRot += discovery * 0.9F;
         head.xRot -= discovery * 0.2F;
+        if(state.ritualizing || state.actionAmount>0 && state.actionType==3){head.xRot=.3f;leftArm.xRot=rightArm.xRot=-1.1f;leftWing.yRot=-1;rightWing.yRot=1;}
     }
 }

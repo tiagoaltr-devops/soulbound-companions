@@ -13,6 +13,7 @@ import com.mojang.brigadier.arguments.IntegerArgumentType;
 public final class AltarCommands {
     private AltarCommands() {}
     @SubscribeEvent public static void register(RegisterCommandsEvent e){
+        if(net.neoforged.fml.loading.FMLEnvironment.isProduction())return;
         e.getDispatcher().register(Commands.literal("soulbound").then(Commands.literal("altar")
             .then(Commands.literal("inspect").executes(c->{
                 var p=c.getSource().getPlayerOrException();var d=AltarSavedData.get(p.level().getServer());

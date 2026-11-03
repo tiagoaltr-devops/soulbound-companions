@@ -119,7 +119,7 @@ public final class TrialEngine {
                     if(t.ticks%10==0)level.sendParticles(ParticleTypes.SOUL,r.x+.5,r.y+1.5,r.z+.5,6,.5,.5,.5,.01);
                     if(t.ticks>=AltarPolicy.bondTicks(r.completions)) {
                         r.completed.add(t.player);r.completions++;LIVE_RUNS.remove(t.run);r.trial=null;
-                        AltarTokens.issue(d,t.player,"spark");d.flush(s);AltarTokens.deliver(p,d);
+                        var reward=AltarTokens.issue(d,t.player,"spark");reward.xpRewardKey="trial:"+r.id;d.flush(s);AltarTokens.deliver(p,d);
                         p.displayClientMessage(Component.translatable("message.soulbound.trial_complete"),false);
                     }
                 }else t.ticks=0;

@@ -73,6 +73,13 @@ public final class AltarChecks {
         var activeCopy=AltarSavedData.CODEC.parse(JsonOps.INSTANCE,AltarSavedData.CODEC.encodeStart(JsonOps.INSTANCE,d).getOrThrow()).getOrThrow().state.forges.get(forge.id);
         check(activeCopy.owner.equals(forge.owner) && activeCopy.state.equals("ACTIVE") && activeCopy.placed);
         activationChecks();
+        br.com.soulbound.companion.JuniorChecks.run();
+        br.com.soulbound.companion.SurvivalChecks.run();
+        br.com.soulbound.companion.ProgressionChecks.run();
+        br.com.soulbound.companion.ProgressionDebugChecks.run();
+        br.com.soulbound.companion.GodChecks.run();
+        br.com.soulbound.companion.Phase69Checks.run();
+        br.com.soulbound.companion.CompanionHudChecks.run();br.com.soulbound.companion.PlenoChecks.run();
         System.out.println("Altar checks passed: "+count);
     }
     private static void activationChecks()throws Exception{

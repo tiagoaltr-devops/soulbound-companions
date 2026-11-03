@@ -23,6 +23,8 @@ public final class OfferingRenderer implements BlockEntityRenderer<OfferingBlock
     @Override public State createRenderState(){return new State();}
     @Override public void extractRenderState(OfferingBlockEntity block,State state,float partial,Vec3 camera,ModelFeatureRenderer.CrumblingOverlay overlay){
         BlockEntityRenderer.super.extractRenderState(block,state,partial,camera,overlay);
+        // The altar is opaque: its own voxel has no light. The displayed stack occupies the air above it.
+        if(block.getLevel()!=null)state.lightCoords=net.minecraft.client.renderer.LevelRenderer.getLightColor(block.getLevel(),block.getBlockPos().above());
         state.time=block.getLevel()==null?0:(block.getLevel().getGameTime()%24000)+partial;
         resolver.updateForTopItem(state.item,block.display(),ItemDisplayContext.GROUND,block.getLevel(),null,(int)block.getBlockPos().asLong());
     }

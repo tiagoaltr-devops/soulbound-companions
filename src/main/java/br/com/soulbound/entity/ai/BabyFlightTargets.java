@@ -24,6 +24,7 @@ public final class BabyFlightTargets {
     }
 
     public static @Nullable Vec3 nearOwner(LupusCompanionEntity companion, Player owner) {
+        if(companion.isGroundForm())return owner.position();
         double y = owner.getY() + Math.min(1.0, owner.getBbHeight() * 0.6);
         var behind = owner.getLookAngle().multiply(-1.5, 0.0, -1.5);
         Vec3 center = new Vec3(owner.getX() + behind.x, y, owner.getZ() + behind.z);

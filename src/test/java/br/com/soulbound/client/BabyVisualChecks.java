@@ -56,6 +56,10 @@ public final class BabyVisualChecks {
             require((image.getRGB(8, 8) >>> 24) == 255, "Mapped magical eyes must be opaque");
         }
         System.out.println("Baby visual checks passed: " + checks);
+        WarriorVisualChecks.run();
+        IrushiaJuniorChecks.run();
+        BramblebackPlenoChecks.run();
+        GodVisualChecks.run();
     }
 
     private static void require(boolean condition, String message) {

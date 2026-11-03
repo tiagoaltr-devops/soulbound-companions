@@ -28,7 +28,7 @@ public final class CompanionEvolution {
     public static boolean accepts(SoulboundRecord record,String kind,AltarSavedData d){
         return record!=null && record.species().equals("LUPUS")
                 && (record.companionStatus()==CompanionStatus.DEAD?record.resurrectionRequired():!record.resurrectionRequired())
-                && AltarPolicy.accepts(kind,record.evolutionStage(),record.companionStatus().name(),d.progress(record.ownerUuid()).godUnlocked);
+                && (!kind.equals("divine") || br.com.soulbound.companion.GodRules.canUnlock(record)) && (!kind.equals("ascension") || br.com.soulbound.companion.PlenoRules.canUnlock(record)) && AltarPolicy.accepts(kind,record.evolutionStage(),record.companionStatus().name(),d.progress(record.ownerUuid()).godUnlocked);
     }
     public static void applyCore(ServerPlayer p,ItemStack staff){
         var tag=staff.getOrDefault(DataComponents.CUSTOM_DATA,CustomData.EMPTY).copyTag();
@@ -39,20 +39,13 @@ public final class CompanionEvolution {
         if(!(p.containerMenu instanceof net.minecraft.world.inventory.CraftingMenu) || !p.isAlive() || p.isSpectator() || token==null || token.spent || token.kind.equals("spark") || record==null
                 || !p.getUUID().equals(SoulEggIdentity.owner(staff)) || !record.bondUuid().equals(SoulEggIdentity.bond(staff))
                 || !accepts(record,token.kind,d))return;
+        if(token.kind.equals("awakening") && (!br.com.soulbound.companion.JuniorCorePolicy.accepts(record,token.owner,token.bond,token.spent)
+                || br.com.soulbound.companion.CompanionFormService.ritualBusy(s,p.getUUID()) || !record.activeForm().equals("BABY")
+                || br.com.soulbound.companion.SoulStaffCommands.loadedCompanion(p,record)==null))return;
+        if(token.kind.equals("ascension") && (!p.getStringUUID().equals(token.owner) || !record.bondUuid().toString().equals(token.bond) || br.com.soulbound.companion.CompanionFormService.ritualBusy(s,p.getUUID()) || br.com.soulbound.companion.SoulStaffCommands.loadedCompanion(p,record)==null))return;
+        if(token.kind.equals("divine") && (!br.com.soulbound.companion.GodRules.core(record,token.owner,token.bond,token.spent) || br.com.soulbound.companion.CompanionFormService.ritualBusy(s,p.getUUID()) || br.com.soulbound.companion.SoulStaffCommands.loadedCompanion(p,record)==null))return;
         if(token.kind.equals("restoration")){
-            for(var world:s.getAllLevels())if(world.getEntity(record.companionUuid())!=null)return;
-            var companion=ModEntities.LUPUS_COMPANION.get().create(p.level(),EntitySpawnReason.MOB_SUMMONED);if(companion==null)return;
-            var position=SoulRecallDestinations.find(p,companion);if(position==null)return;
-            var progress=d.progress(p.getUUID());token.previousGodUnlocked=progress.godUnlocked;token.previousGodEnd=progress.godEnd;token.previousResurrections=progress.resurrections;
-            token.spent=true;token.applicationOwner=p.getStringUUID();token.applicationBond=record.bondUuid().toString();token.applicationPending=true;
-            progress.godUnlocked=false;progress.godEnd=0;progress.resurrections++;d.flush(s);
-            var next=record.withEvolution("BABY",0,0).withState(CompanionStatus.SUMMONING,false,"FOLLOW_PASSIVE");
-            identities.put(next);identities.flush(s);
-            companion.setUUID(record.companionUuid());companion.applyIdentity(next);companion.setPos(position);
-            if(!p.level().addFreshEntity(companion)){
-                identities.put(record);identities.flush(s);token.spent=false;progress.godUnlocked=token.previousGodUnlocked;progress.godEnd=token.previousGodEnd;progress.resurrections=token.previousResurrections;token.applicationPending=false;d.flush(s);return;
-            }
-            token.applicationPending=false;d.flush(s);
+            if(!completeResurrection(s,d,record,token))return;
         }else{
             token.spent=true;token.applicationOwner=p.getStringUUID();token.applicationBond=record.bondUuid().toString();token.applicationPending=true;d.flush(s);
             replay(s,d,token);
@@ -60,19 +53,33 @@ public final class CompanionEvolution {
         SoulboundIdentity.synchronizePlayer(p);
         p.level().sendParticles(ParticleTypes.TOTEM_OF_UNDYING,p.getX(),p.getY()+1,p.getZ(),40,.6,.8,.6,.1);
     }
+    public static boolean completeResurrection(MinecraftServer server,AltarSavedData d,SoulboundRecord record,AltarSavedData.Token token){
+        if(!record.equals(SoulboundSavedData.get(server).find(record.ownerUuid())) || !record.canResurrect() || token.spent || !token.kind.equals("restoration"))return false;
+        for(var level:server.getAllLevels())if(level.getEntity(record.companionUuid())!=null)return false;
+        token.recoveryOnly=true;token.spent=true;token.delivered=true;token.applicationOwner=record.ownerUuid().toString();token.applicationBond=record.bondUuid().toString();
+        token.previousResurrections=d.progress(record.ownerUuid()).resurrections;token.applicationPending=true;d.flush(server);
+        replay(server,d,token);var player=server.getPlayerList().getPlayer(record.ownerUuid());if(player!=null)SoulboundIdentity.synchronizePlayer(player);return true;
+    }
     private static void replay(MinecraftServer s,AltarSavedData d,AltarSavedData.Token t){
+        if(t.kind.equals("talent_reset")){TalentResetService.replay(s,d,t);return;}
         var identities=SoulboundSavedData.get(s);UUID owner=UUID.fromString(t.applicationOwner);var record=identities.find(owner);
         if(record==null || !record.bondUuid().toString().equals(t.applicationBond))throw new IllegalStateException("Core journal bond mismatch");
         if(t.kind.equals("restoration")){
+            if(t.recoveryOnly){
+                if(record.canResurrect()){identities.put(record.recoverAfterDeath());identities.flush(s);}
+                else if(!java.util.Set.of(CompanionStatus.READY,CompanionStatus.SUMMONING,CompanionStatus.ACTIVE).contains(record.companionStatus()))throw new IllegalStateException("Unexpected resurrection journal state");
+                var progress=d.progress(owner);progress.resurrections=Math.max(progress.resurrections,t.previousResurrections+1);progress.godEnd=0;
+            }else{
             // If reservation never reached disk, permit retry with the same core. Never recreate an ACTIVE/SUMMONING entity after restart.
             if(record.companionStatus()==CompanionStatus.DEAD){t.spent=false;var progress=d.progress(owner);progress.godUnlocked=t.previousGodUnlocked;progress.godEnd=t.previousGodEnd;progress.resurrections=t.previousResurrections;}
-        }else if(t.kind.equals("divine")){d.progress(owner).godUnlocked=true;}
+            }
+        }else if(t.kind.equals("divine")){identities.put(record.withForms(record.forms().unlockGod()));identities.flush(s);}
         else{
             String target=t.kind.equals("awakening")?"JUNIOR":"PLENO";
             if(!record.evolutionStage().equals(target)){
                 String expected=t.kind.equals("awakening")?"BABY":"JUNIOR";
                 if(!record.evolutionStage().equals(expected))throw new IllegalStateException("Core journal stage mismatch");
-                identities.put(record.withEvolution(target,record.evolutionProgress(),record.godCooldownEnd()));identities.flush(s);
+                identities.put(t.kind.equals("awakening")?record.unlockJunior():record.unlockPleno());identities.flush(s);
             }
         }
         t.applicationPending=false;d.flush(s);
@@ -84,30 +91,25 @@ public final class CompanionEvolution {
         var level=(net.minecraft.server.level.ServerLevel)c.level();var s=level.getServer();var record=SoulboundSavedData.get(s).find(c.getOwnerUuid());
         if(record!=null)c.applyIdentity(record);
     }
-    public static void tickGod(LupusCompanionEntity c){
-        var level=(net.minecraft.server.level.ServerLevel)c.level();var s=level.getServer();
-        var d=AltarSavedData.get(s);var p=d.progress(c.getOwnerUuid());
-        if(p.godEnd!=0 && p.godEnd<=s.overworld().getGameTime()){p.godEnd=0;d.setDirty();attributes(c);}
-    }
+    public static void tickGod(LupusCompanionEntity c){if(c.isGod() && c.tickCount%10==0)((net.minecraft.server.level.ServerLevel)c.level()).sendParticles(ParticleTypes.SOUL_FIRE_FLAME,c.getX(),c.getY()+1,c.getZ(),3,.45,.65,.45,.005);}
     public static void attributes(LupusCompanionEntity c){
         if(!(c.level() instanceof net.minecraft.server.level.ServerLevel level) || c.getOwnerUuid()==null)return;
-        var d=AltarSavedData.get(level.getServer());var progress=d.progress(c.getOwnerUuid());
-        boolean god=progress.godUnlocked && progress.godEnd>level.getServer().overworld().getGameTime();
-        double health=god?80:switch(c.getEvolutionStage()){case BABY->12;case JUNIOR->24;case PLENO->40;};
-        double speed=god?.20:switch(c.getEvolutionStage()){case BABY->.12;case JUNIOR->.14;case PLENO->.16;};
-        double old=c.getMaxHealth();
-        if(old!=health){c.getAttribute(Attributes.MAX_HEALTH).setBaseValue(health);c.setHealth((float)Math.min(health,c.getHealth()*health/old));}
+
+        boolean god=c.isGod();
+        double health=br.com.soulbound.companion.SurvivalRules.health(c.getEvolutionStage().name())*c.talents().health();
+        double speed=god?br.com.soulbound.companion.GodRules.SPEED:switch(c.getEvolutionStage()){case BABY->.12;case JUNIOR->.28;case PLENO->br.com.soulbound.companion.PlenoRules.SPEED;case GOD->br.com.soulbound.companion.GodRules.SPEED;};
+        c.healthBase(health,god);
+        c.getAttribute(Attributes.ATTACK_DAMAGE).setBaseValue(br.com.soulbound.Config.JUNIOR_ATTACK_DAMAGE.get()*(god?2.6:c.isPleno()?1.3:c.isBaby()?0:1));
         c.getAttribute(Attributes.FLYING_SPEED).setBaseValue(speed);c.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(speed);
-        c.getAttribute(Attributes.SCALE).setBaseValue(god?1.7:switch(c.getEvolutionStage()){case BABY->1;case JUNIOR->1.2;case PLENO->1.45;});
+        c.getAttribute(Attributes.SCALE).setBaseValue(1);
+        c.getAttribute(Attributes.ARMOR).setBaseValue(god?12:0); // Junior base armor is zero; multiplying by 1.15 remains zero.
+        c.getAttribute(Attributes.KNOCKBACK_RESISTANCE).setBaseValue(god?.6:c.isPleno()?Math.min(1,.2+.03*c.talents().guardian()):0);
     }
-    public static boolean god(ServerPlayer p){
-        var s=p.level().getServer();var d=AltarSavedData.get(s);var progress=d.progress(p.getUUID());var identities=SoulboundSavedData.get(s);var r=identities.find(p.getUUID());long now=s.overworld().getGameTime();
-        if(r==null || !r.evolutionStage().equals("PLENO") || r.companionStatus()!=CompanionStatus.ACTIVE || !progress.godUnlocked || r.godCooldownEnd()>now)return false;
-        progress.godEnd=now+1200;identities.put(r.withEvolution(r.evolutionStage(),r.evolutionProgress(),now+18000));
-        identities.flush(s);d.flush(s);
-        for(var level:s.getAllLevels()){var entity=level.getEntity(r.companionUuid());if(entity instanceof LupusCompanionEntity c)attributes(c);}
-        return true;
+    public static float proportionalHealth(float health,double previousMax,double nextMax){
+        if(!Float.isFinite(health) || !Double.isFinite(previousMax) || !Double.isFinite(nextMax) || previousMax<=0 || nextMax<=0)throw new IllegalArgumentException("Invalid companion health");
+        return (float)Math.max(0,Math.min(nextMax,health*nextMax/previousMax));
     }
+    public static boolean god(ServerPlayer p){return br.com.soulbound.companion.GodFormService.activate(p);}
     @SubscribeEvent public static void commands(RegisterCommandsEvent e){
         e.getDispatcher().register(literal("soulbound").then(literal("god").executes(c->{var p=c.getSource().getPlayerOrException();boolean ok=god(p);p.displayClientMessage(Component.translatable(ok?"message.soulbound.god_active":"message.soulbound.god_denied"),false);return ok?1:0;})));
     }

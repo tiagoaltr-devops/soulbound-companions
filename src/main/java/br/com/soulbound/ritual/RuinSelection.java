@@ -7,6 +7,8 @@ import net.minecraft.world.level.levelgen.structure.BoundingBox;
 public final class RuinSelection {
     public static final int MAX_CENTER_OFFSET = 128;
     private RuinSelection() {}
+    /** One stable fair bit per village start: no dependence on neighbors or generation order. */
+    public static boolean villageSelected(long seed,int chunkX,int chunkZ){return (priority(seed ^ 0x56494c4c41474535L,chunkX,chunkZ)&1L)==0;}
     public static BoundingBox replacementBounds(BlockPos center,int radius,long[] bells){
         var bounds=new BoundingBox(center.getX()-radius,center.getY()-1,center.getZ()-radius,center.getX()+radius,center.getY()+4,center.getZ()+radius);
         for(long value:bells)bounds.encapsulate(BlockPos.of(value));return bounds;

@@ -7,7 +7,7 @@ import net.minecraft.world.item.ItemStack;
 
 public final class ForgeMenu extends AbstractContainerMenu {
     private final String forgeId;
-    public final ContainerData info=new SimpleContainerData(8);
+    public final ContainerData info=new SimpleContainerData(14);
     private final Player viewer;
     public java.util.List<net.minecraft.network.chat.Component> materials=java.util.List.of();
     public net.minecraft.network.chat.Component coreName=net.minecraft.network.chat.Component.empty();
@@ -34,13 +34,36 @@ public final class ForgeMenu extends AbstractContainerMenu {
             info.set(4,(int)Math.round(br.com.soulbound.Config.FORGE_CRITICAL_CHANCE.get()*10000));
             info.set(5,0);info.set(6,br.com.soulbound.Config.RITUAL_TICKS.get()/20);
             if(viewer instanceof ServerPlayer p){var stack=AltarInventory.decode(p.level(),f.core);
-                for(String kind:new String[]{"awakening","ascension","divine","restoration"})if(stack.is(br.com.soulbound.registry.ModItems.ALTAR_ITEMS.get(kind+"_core").get()))info.set(5,RitualService.cost(kind)+(p.getStringUUID().equals(f.owner)?0:br.com.soulbound.Config.RITUAL_VISITOR_XP.get()));}
+                var record=br.com.soulbound.companion.identity.SoulboundSavedData.get(s).find(p.getUUID());boolean restoration=record!=null && record.canResurrect();info.set(10,restoration?1:0);info.set(11,0);
+                for(var r:AltarSavedData.get(s).state.rituals.values())if(r.forge.equals(f.id) && r.player.equals(p.getStringUUID()))info.set(11,(int)Math.min(32767,Math.max(1,(r.end-s.overworld().getGameTime()+19)/20)));
+                boolean divine=!restoration && (stack.is(br.com.soulbound.registry.ModItems.ALTAR_ITEMS.get("divine_core").get()) || stack.isEmpty() && record!=null && record.evolutionStage().equals("PLENO") && !record.unlockedForms().contains("GOD"));info.set(13,divine?1:0);
+                if(divine){info.set(5,RitualService.cost("divine")+(p.getStringUUID().equals(f.owner)?0:br.com.soulbound.Config.RITUAL_VISITOR_XP.get()));info.set(6,45);}
+                boolean ascension=!restoration && (stack.is(br.com.soulbound.registry.ModItems.ALTAR_ITEMS.get("ascension_core").get()) || stack.isEmpty() && record!=null && record.evolutionStage().equals("JUNIOR"));info.set(12,ascension?1:0);
+                if(ascension){info.set(5,RitualService.cost("ascension")+(p.getStringUUID().equals(f.owner)?0:br.com.soulbound.Config.RITUAL_VISITOR_XP.get()));info.set(6,30);}
+                boolean awakening=!divine && !ascension && (stack.isEmpty() || stack.is(br.com.soulbound.registry.ModItems.ALTAR_ITEMS.get("awakening_core").get()));info.set(9,awakening?1:0);
+                if(awakening){info.set(5,RitualService.cost("awakening")+(p.getStringUUID().equals(f.owner)?0:br.com.soulbound.Config.RITUAL_VISITOR_XP.get()));info.set(6,20);
+                    if(p.tickCount%20==0)info.set(8,RitualService.awakeningProblem(p,f).equals("ready")?1:0);}
+                for(String kind:new String[]{"awakening","ascension","divine","restoration"})if(stack.is(br.com.soulbound.registry.ModItems.ALTAR_ITEMS.get(kind+"_core").get()))info.set(5,RitualService.cost(kind)+(p.getStringUUID().equals(f.owner)?0:br.com.soulbound.Config.RITUAL_VISITOR_XP.get()));
+                if(restoration){info.set(9,0);info.set(5,RitualService.cost("restoration")+(p.getStringUUID().equals(f.owner)?0:br.com.soulbound.Config.RITUAL_VISITOR_XP.get()));info.set(6,br.com.soulbound.Config.RITUAL_TICKS.get()/20);}}
         }}}super.broadcastChanges();
     }
     @Override public boolean clickMenuButton(Player player,int id){
         if(!(player instanceof ServerPlayer p))return false;if(!stillValid(p))return ForgeService.reject(p,"state");if(!p.isAlive() || p.isSpectator())return ForgeService.reject(p,"permission");var f=forge(p);
         if(id==0){boolean changed=ForgeService.activate(p,f);if(changed)ForgeService.open(p,new net.minecraft.core.BlockPos(f.x,f.y,f.z));return changed;}
-        if(id==2){if(!f.state.equals("ACTIVE") || f.activation!=null)return ForgeService.reject(p,"state");boolean started=RitualService.start(p,f);return started || ForgeService.reject(p,"ritual");}
+        if(id==3)return TalentResetService.start(p,f);
+        if(id==2){if(!f.state.equals("ACTIVE") || f.activation!=null)return ForgeService.reject(p,"state");
+            var record=br.com.soulbound.companion.identity.SoulboundSavedData.get(p.level().getServer()).find(p.getUUID());
+            if(record!=null && record.canResurrect()){
+                String problem=RitualService.resurrectionProblem(p,f);if(!problem.equals("ready"))return ForgeService.reject(p,net.minecraft.network.chat.Component.translatable("message.soulbound.resurrection_error."+problem));
+            }
+            var core=AltarInventory.decode(p.level(),f.core);
+            boolean divine=core.is(br.com.soulbound.registry.ModItems.ALTAR_ITEMS.get("divine_core").get()) || core.isEmpty() && record!=null && record.evolutionStage().equals("PLENO") && !record.unlockedForms().contains("GOD");
+            if(divine){String problem=RitualService.divineProblem(p,f);if(!problem.equals("ready"))return ForgeService.reject(p,net.minecraft.network.chat.Component.translatable("message.soulbound.god_ritual."+problem));}
+            boolean ascension=core.is(br.com.soulbound.registry.ModItems.ALTAR_ITEMS.get("ascension_core").get()) || core.isEmpty() && record!=null && record.evolutionStage().equals("JUNIOR");
+            if(ascension){String problem=RitualService.ascensionProblem(p,f);if(!problem.equals("ready"))return ForgeService.reject(p,net.minecraft.network.chat.Component.translatable("message.soulbound.pleno_ritual."+problem));}
+            if(!divine && !ascension && (core.isEmpty() || core.is(br.com.soulbound.registry.ModItems.ALTAR_ITEMS.get("awakening_core").get()))){
+                String problem=RitualService.awakeningProblem(p,f);if(!problem.equals("ready"))return ForgeService.reject(p,net.minecraft.network.chat.Component.translatable("message.soulbound.junior_ritual."+problem));}
+            boolean started=RitualService.start(p,f);return started || ForgeService.reject(p,"ritual");}
         if(id==1){if(!f.state.equals("ACTIVE") || f.activation!=null)return ForgeService.reject(p,"state");if(RitualService.busy(p.level(),f.id))return ForgeService.reject(p,"busy");boolean exchanged=InventoryTransfers.exchange(p,"forge/"+f.id,true);if(exchanged)ForgeService.open(p,new net.minecraft.core.BlockPos(f.x,f.y,f.z));else ForgeService.reject(p,"storage");return exchanged;}
         return ForgeService.reject(p,"state");
     }

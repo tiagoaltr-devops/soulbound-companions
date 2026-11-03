@@ -19,7 +19,7 @@ public class FollowCompanionOwnerGoal extends Goal {
 
     @Override
     public boolean canUse() {
-        if (companion.level().isClientSide() || companion.getBehaviorMode() != BehaviorMode.FOLLOW_PASSIVE) return false;
+        if (companion.level().isClientSide() || companion.getBehaviorMode() == BehaviorMode.STAY) return false;
         owner = companion.getOwnerPlayer();
         return owner != null && owner.isAlive() && !owner.isSpectator() && needsFollow();
     }
@@ -28,11 +28,11 @@ public class FollowCompanionOwnerGoal extends Goal {
     public boolean canContinueToUse() {
         return owner != null && owner.isAlive() && !owner.isSpectator()
                 && owner.level() == companion.level() && companion.isOwnedBy(owner)
-                && companion.getBehaviorMode() == BehaviorMode.FOLLOW_PASSIVE && needsFollow();
+                && companion.getBehaviorMode() != BehaviorMode.STAY && needsFollow();
     }
 
     private boolean needsFollow() {
-        return owner != null && (companion.distanceToSqr(owner) > 6.25 || Math.abs(companion.getY() - (owner.getY() + 1.0)) > 0.65);
+        return owner != null && (companion.distanceToSqr(owner) > 6.25 || !companion.isGroundForm() && Math.abs(companion.getY() - (owner.getY() + 1.0)) > 0.65);
     }
 
     @Override

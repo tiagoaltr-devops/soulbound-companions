@@ -1,160 +1,102 @@
+# Soulbound Companions
 
-Soulbound Companions — Baby Flutuante
-=======
+Mod de Minecraft Java com companheiros vinculados ao jogador por UUID, evolução,
+exploração, combate e rituais. Em desenvolvimento e preparado para colaboração.
 
-Compatibilidade: Minecraft Java 1.21.11, NeoForge 21.11.48, Java 21.
-Mod ID: `soulbound`. As dependências e o Gradle wrapper originais foram preservados.
+| Componente | Versão do projeto |
+| --- | --- |
+| Minecraft Java | 1.21.11 |
+| NeoForge | 21.11.48 |
+| Java | 21 |
+| Gradle Wrapper | 9.2.1 |
+| Mod ID / package | `soulbound` / `br.com.soulbound` |
 
-A Fase 2 adiciona alertas de ameaças, fuga emergencial com retorno ao ponto de
-Ficar e Instinto Mineral incremental. Consulte [Fase 2](docs/PHASE2.md) para
-configuração, arquivos alterados, limitações e testes desta fase. Os resultados
-de inicialização documentados mais abaixo se referem à Fase 1.
+As versões são definidas pelo projeto. Use o wrapper incluído e um JDK 21;
+não é necessário instalar Gradle globalmente nem adicionar JARs de outros mods.
+A primeira compilação baixa as dependências e precisa de acesso à internet.
 
-O sistema [Soulbound Identity](docs/SOULBOUND_IDENTITY.md) estabelece um vínculo
-permanente por UUID de jogador, entrega inicial do Ovo da Alma e proteção contra
-invocações duplicadas. O ovo agora permanece no inventário após a invocação.
-Para recuperar somente o ovo do vínculo existente, use `/soulbound recover`.
+## Começar após clonar
 
-A [Fase 4 — visual e voo Baby](docs/PHASE4_BABY_VISUAL.md) adiciona modelo próprio,
-textura original e navegação tridimensional. O Lupus continua sendo Baby, com os
-mesmos UUIDs e regras de Soulbound Identity. Ficar agora mantém voo estacionário.
-
-A [Fase 5 — Bastão da Alma](docs/PHASE5_SOUL_STAFF.md) mantém o mesmo item e muda
-sua aparência conforme o estado oficial. Com o companheiro ACTIVE, clique direito
-no ar alterna Seguir/Ficar; Shift + clique direito abre o menu de comandos Baby.
-
-A [Fase 5.1 — Chamado da Alma](docs/PHASE51_SOUL_RECALL.md) acrescenta **Chamar
-companheiro** ao menu. O chamado recupera a entidade canônica, inclusive de outro
-chunk ou dimensão, retorna a Follow e tem cooldown persistente de 30 segundos.
-
-### Executar
-
-No PowerShell, na raiz do projeto:
+No PowerShell, dentro da raiz do clone:
 
 ```powershell
-.\gradlew.bat build
+java -version
+.\gradlew.bat build --console=plain
 .\gradlew.bat runClient
 ```
 
-O artefato atual é `build/libs/soulbound-1.0.0.jar`. Um JAR antigo com outro
-nome pode continuar em `build/libs`; use somente o artefato `soulbound` atual.
+No Linux/macOS:
 
-### Teste manual (mundo de teste com comandos habilitados)
+```bash
+bash ./gradlew build --console=plain
+bash ./gradlew runClient
+```
 
-1. Confirme Soulbound Companions na lista de mods. Entre no mundo e confira a
-   entrega do Ovo da Alma. Para recuperar o item, use `/soulbound recover`.
-   Para testes de normalização, use `/give @s soulbound:companion_egg`.
-2. Use o ovo na face superior de um bloco sólido com espaço livre. Deve aparecer
-   exatamente um Lupus Baby mágico flutuante; o jogador que usou
-   o ovo deve ser seu proprietário. O item passa a exibir o Bastão da Alma.
-3. Confira que o mesmo item permanece após invocar, tanto em sobrevivência quanto
-   em criativo, e que outros usos comandam o Lupus sem criar outro. Uma posição
-   bloqueada deve impedir a invocação sem alterar o estado de prontidão.
-4. Caminhe, suba e desça em terreno acessível. O Lupus deve seguir em três
-   dimensões e parar próximo do proprietário. Não há teleporte: obstáculos, dimensões diferentes
-   e chunks descarregados podem interromper o acompanhamento.
-5. Clique com o botão direito no Lupus. Confira a mensagem de Ficar e o voo
-   estacionário próximo ao ponto do comando. Afaste-se e confirme que ele permanece
-   no local. Clique novamente para voltar a Seguir (passivo).
-6. Em multiplayer, um segundo jogador deve receber a mensagem de falta de
-   permissão e não mudar o modo nem tomar posse. Confira também com itens nas
-   mãos, incluindo laço, comida e outro ovo.
-7. Coloque o Lupus em Ficar, salve, saia e reabra. Repita em Seguir.
-   Confira proprietário e modo preservados. Para inspecionar os dados, use:
-   `/data get entity @e[type=soulbound:lupus_companion,sort=nearest,limit=1]`.
-   Confira `OwnerUUID`, `EvolutionStage: "BABY"`, `BehaviorMode` e vida máxima 12.
-8. Aproxime jogadores e mobs, ataque o Lupus e ataque o proprietário. O Baby
-   nunca deve atacar ou retaliar. Ele ainda pode sofrer dano e morrer.
-9. Troque entre português brasileiro e inglês e confira os nomes e mensagens.
-10. Em um servidor dedicado de teste com a mesma versão, instale o JAR e confira
-    a inicialização, a invocação e o controle por dois jogadores. A entrada de
-    cliente e o renderer estão isolados do código comum.
+Abra a raiz na IDE e importe o projeto Gradle. Configurações `.vscode`/`.idea`,
+caches, mundos e configurações de servidor são locais e não acompanham o clone.
+Veja [CONTRIBUTING.md](CONTRIBUTING.md) para setup, branches e validação.
 
-O build confirma compilação e empacotamento. Os testes de jogabilidade acima
-exigem execução manual; não são considerados aprovados apenas pelo build.
-Evolução, combate, transformação GOD, rituais e ressurreição não estão implementados.
+O artefato é `build/libs/soulbound-1.0.0.jar`. O build padrão executa a suíte
+Java existente e confere recursos e exclusões de desenvolvimento no JAR.
+O workflow em `.github/workflows/build.yml` executa o build com Java 21 no GitHub.
 
-### Organização
+## Funcionalidades atuais
 
-- `registry/ModEntities.java`: tipo `soulbound:lupus_companion` e atributos.
-- `registry/ModItems.java`: item `soulbound:companion_egg`.
-- `entity/LupusCompanionEntity.java`: dono, interação e persistência por
-  `ValueInput`/`ValueOutput`, APIs da versão 1.21.11.
-- `entity/ai/FollowCompanionOwnerGoal.java`: acompanhamento terrestre no servidor.
-- `companion/`: somente os modos e o estágio implementados nesta fase.
-- `item/CompanionEggItem.java`: invocação exclusiva por jogador no servidor,
-  sem configurar spawners nem aceitar dados de entidade do item.
-- `client/LupusCompanionRenderer.java`: modelo vanilla `WOLF_BABY` e render state.
-- `assets/soulbound/`: traduções e definição/modelo do item.
+- Identidade canônica persistente, propriedade por UUID e reserva de entidade única.
+- Ovo/Bastão da Alma, comandos, recuperação do item e Soul Recall.
+- Baby flutuante, alertas de ameaças, fuga, detecção de minérios e ressonância ancestral.
+- Formas Junior e Pleno, progressão de nível, talentos e combate.
+- God temporário, escudo espiritual e habilidades próprias.
+- Equipamentos, alimentação manual/automática, regeneração e comportamento defensivo.
+- Ruínas nas vilas, provações, Forja da Alma, rituais e ressurreição.
+- HUD de vida/XP e interfaces de comandos e inventário.
+- Visuais Junior Irushia e Pleno Brambleback; God Prime próprio.
 
-A tradução de exemplo do template permanece sem registro ativo. `Config.java`
-foi reaproveitado na Fase 2 para os parâmetros de exploração do servidor.
+Implementado não significa homologado em todos os cenários. Os relatórios registram
+os testes realmente executados e as pendências. As integrações recentes dos modelos
+externos ainda exigem inspeção visual no Minecraft e testes com clientes reais.
 
-### Validação realizada e arquivos alterados
+## Documentação para continuar o desenvolvimento
 
-- Build inicial e build após implementação: `BUILD SUCCESSFUL`.
-- Inicialização do cliente com o mod e carregamento dos recursos: executada.
-- Inicialização do servidor dedicado: chegou a `Done`, sem carregar a entrada
-  de cliente. O servidor de desenvolvimento foi encerrado após a checagem.
-- Conteúdo do JAR, metadados e sintaxe dos quatro JSONs novos: conferidos.
-- Invocação por console não validada: a execução Gradle neste ambiente não
-  encaminhou os comandos digitados ao servidor.
-- Jogabilidade, controle multiplayer e persistência após reabrir o mundo:
-  pendentes dos testes manuais descritos acima.
+| Documento | Conteúdo |
+| --- | --- |
+| [Manual do jogador](docs/MANUAL_DO_JOGADOR.md) | Mecânicas e receitas |
+| [Contribuição](CONTRIBUTING.md) | Setup, fluxo de Git e validação |
+| [AGENTS.md](AGENTS.md) | Convenções de desenvolvimento e arquitetura |
+| [Soulbound Identity](docs/SOULBOUND_IDENTITY.md) | Autoridade, UUIDs, persistência e limites |
+| [Fase 6 e checklist](docs/FASE_6_IMPLEMENTACAO.md) / [checklist](docs/FASE_6_CHECKLIST.md) | Altares, rituais e testes |
+| [Sobrevivência](docs/FASE_6_9_SOBREVIVENCIA.md) | Equipamentos, HP, alimentação e IA |
+| [Pré-release](docs/FASE_6_10_PRE_RELEASE.md) | Revisão, empacotamento e homologação |
+| [Junior Irushia](docs/JUNIOR_IRUSHIA.md) / [Pleno Brambleback](docs/PLENO_BRAMBLEBACK.md) | Modelos atuais, créditos e testes visuais |
+| [Frequência das ruínas](docs/RUINAS_CHANCE_50.md) | Política atual de geração |
 
-Arquivos modificados:
+Os demais relatórios em `docs/` descrevem fases históricas. Consulte os documentos
+mais recentes para mudanças posteriores. O [README anterior](docs/README_HISTORICO.md)
+foi preservado como referência histórica, incluindo as antigas limitações do MVP.
 
-- `AGENTS.md`: compatibilidade com Minecraft 1.21.11 e NeoForge 21.11.48.
-- `gradle.properties`: Mod ID `soulbound`, sem mudar versões de dependências.
-- `src/main/java/br/com/soulbound/SoulboundCompanions.java`.
-- `src/main/java/br/com/soulbound/SoulboundCompanionsClient.java`.
-- `src/main/templates/META-INF/neoforge.mods.toml`: descrição do mod.
-- `README.md`: execução, limitações e roteiro de testes.
+## Estrutura
 
-Arquivos criados (Java sob `src/main/java/br/com/soulbound/`):
+```text
+src/main/java/br/com/soulbound/   Código do mod separado por responsabilidade
+src/main/resources/             Assets, traduções e datapacks
+src/main/templates/             Metadados expandidos pelo Gradle
+src/test/                       Verificações e fixtures de desenvolvimento
+docs/                           Manual, arquitetura e relatórios
+tools/                          Importadores de modelos e ferramentas locais
+gradle/wrapper/                 Wrapper necessário ao clone
+*.bbmodel                       Fontes dos modelos usados pelos importadores
+```
 
-- `companion/BehaviorMode.java` e `companion/EvolutionStage.java`.
-- `entity/LupusCompanionEntity.java`.
-- `entity/ai/FollowCompanionOwnerGoal.java`.
-- `item/CompanionEggItem.java`.
-- `registry/ModEntities.java` e `registry/ModItems.java`.
-- `client/LupusCompanionRenderer.java`.
-- `src/main/resources/assets/soulbound/lang/en_us.json`.
-- `src/main/resources/assets/soulbound/lang/pt_br.json`.
-- `src/main/resources/assets/soulbound/items/companion_egg.json`.
-- `src/main/resources/assets/soulbound/models/item/companion_egg.json`.
+Geometria Java e texturas já estão prontas para o build. Os scripts PowerShell de
+importação são opcionais, usados ao editar os modelos-fonte. Mantenha os `.bbmodel`
+na raiz enquanto os scripts usarem esses caminhos.
 
-As execuções de desenvolvimento também geram logs, configuração e um mundo
-de servidor em `run/`, além dos artefatos em `build/`.
+## Compartilhamento e licenças
 
-Installation information (template original)
-=======
+Inclua fontes, recursos, testes, documentos, ferramentas e wrapper no commit.
+Não copie `build/`, `.gradle/`, `run/`, `runs/`, configurações de IDE ou JARs externos.
+O `.gitignore` cobre esses arquivos e preserva a exceção do `gradle-wrapper.jar`.
 
-This template repository can be directly cloned to get you started with a new
-mod. Simply create a new repository cloned from this one, by following the
-instructions provided by [GitHub](https://docs.github.com/en/repositories/creating-and-managing-repositories/creating-a-repository-from-a-template).
-
-Once you have your clone, simply open the repository in the IDE of your choice. The usual recommendation for an IDE is either IntelliJ IDEA or Eclipse.
-
-If at any point you are missing libraries in your IDE, or you've run into problems you can
-run `gradlew --refresh-dependencies` to refresh the local cache. `gradlew clean` to reset everything 
-{this does not affect your code} and then start the process again.
-
-Mapping Names:
-============
-By default, the MDK is configured to use the official mapping names from Mojang for methods and fields 
-in the Minecraft codebase. These names are covered by a specific license. All modders should be aware of this
-license. For the latest license text, refer to the mapping file itself, or the reference copy here:
-https://github.com/NeoForged/NeoForm/blob/main/Mojang.md
-
-Additional Resources: 
-==========
-Community Documentation: https://docs.neoforged.net/  
-NeoForged Discord: https://discord.neoforged.net/
-# Fase 6 — Altar da Alma
-
-Ruínas, provas individuais, Forja multibloco, rituais e progressão foram integrados.
-O nascimento inicial e o Soul Recall continuam sem custo de XP. Veja o
-[relatório de implementação](docs/FASE_6_IMPLEMENTACAO.md) e o
-[checklist de homologação](docs/FASE_6_CHECKLIST.md), incluindo resultados dos testes
-e limitações. Jogabilidade e multiplayer desta fase ainda exigem homologação.
+O mod mantém a licença definida nos metadados (`All Rights Reserved`), com exceções
+específicas para assets de terceiros. Consulte `TEMPLATE_LICENSE.txt` e os créditos
+em `src/main/resources/assets/soulbound/credits/`. Não remova esses avisos ao compartilhar.

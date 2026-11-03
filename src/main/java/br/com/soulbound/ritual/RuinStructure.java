@@ -24,7 +24,7 @@ import net.minecraft.world.level.levelgen.structure.templatesystem.StructurePlac
 
 public final class RuinStructure extends Structure {
     public static final MapCodec<RuinStructure> CODEC = RecordCodecBuilder.mapCodec(i -> i.group(
-            settingsCodec(i),Codec.intRange(500,32000).optionalFieldOf("minimum_spawn_distance",500).forGetter(s -> s.minimumSpawnDistance)
+            settingsCodec(i),Codec.intRange(0,32000).optionalFieldOf("minimum_spawn_distance",0).forGetter(s -> s.minimumSpawnDistance)
     ).apply(i,RuinStructure::new));
     private final int minimumSpawnDistance;
     private static final List<net.minecraft.world.level.block.Block> FUNCTIONAL=List.of(Blocks.BELL,Blocks.BLAST_FURNACE,Blocks.BREWING_STAND,
@@ -32,7 +32,7 @@ public final class RuinStructure extends Structure {
             Blocks.SMITHING_TABLE,Blocks.SMOKER,Blocks.STONECUTTER,Blocks.BARREL,
             Blocks.WHITE_BED,Blocks.ORANGE_BED,Blocks.MAGENTA_BED,Blocks.LIGHT_BLUE_BED,Blocks.YELLOW_BED,Blocks.LIME_BED,Blocks.PINK_BED,Blocks.GRAY_BED,
             Blocks.LIGHT_GRAY_BED,Blocks.CYAN_BED,Blocks.PURPLE_BED,Blocks.BLUE_BED,Blocks.BROWN_BED,Blocks.GREEN_BED,Blocks.RED_BED,Blocks.BLACK_BED);
-    public RuinStructure(StructureSettings settings) { this(settings,500); }
+    public RuinStructure(StructureSettings settings) { this(settings,0); }
     public RuinStructure(StructureSettings settings,int minimum) { super(settings);minimumSpawnDistance=minimum; }
     @Override protected Optional<GenerationStub> findGenerationPoint(GenerationContext c) {
         if(!selected(c.chunkGenerator(),c.randomState(),c.registryAccess(),c.heightAccessor(),c.seed(),c.chunkPos()))return Optional.empty();
@@ -53,9 +53,7 @@ public final class RuinStructure extends Structure {
     public static boolean selected(ChunkGenerator generator,net.minecraft.world.level.levelgen.RandomState random,RegistryAccess registry,LevelHeightAccessor heights,long seed,ChunkPos pos){
         var villageSet=registry.lookupOrThrow(Registries.STRUCTURE_SET).getValue(net.minecraft.resources.ResourceKey.create(Registries.STRUCTURE_SET,net.minecraft.resources.Identifier.withDefaultNamespace("villages")));
         if(villageSet==null || !(villageSet.placement() instanceof net.minecraft.world.level.levelgen.structure.placement.RandomSpreadStructurePlacement villages))return false;
-        int separation=1000;
-        for(var set:registry.lookupOrThrow(Registries.STRUCTURE_SET).listElements().toList())if(set.value().placement() instanceof RuinPlacement p)separation=p.minimumSeparation;
-        return RuinPlacement.selected(villages,seed,pos.x,pos.z,separation,(x,z)->{
+        return RuinPlacement.selected(villages,seed,pos.x,pos.z,0,(x,z)->{
             int bx=x*16+8,bz=z*16+8;
             var biome=generator.getBiomeSource().getNoiseBiome(QuartPos.fromBlock(bx),QuartPos.fromBlock(generator.getSeaLevel()),QuartPos.fromBlock(bz),random.sampler());
             return villageSet.structures().stream().anyMatch(entry->entry.structure().value().biomes().contains(biome));

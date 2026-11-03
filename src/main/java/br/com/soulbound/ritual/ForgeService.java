@@ -37,8 +37,12 @@ public final class ForgeService {
         var f=at(p.level(),pos);if(f==null)return;
         var record=f.owner==null?null:br.com.soulbound.companion.identity.SoulboundSavedData.get(p.level().getServer()).find(UUID.fromString(f.owner));
         String owner=f.owner==null?"—":record==null?f.owner:record.ownerLastKnownName();
-        String ritual="activation";var core=AltarInventory.decode(p.level(),f.core);
-        if(f.state.equals("ACTIVE"))for(String kind:new String[]{"awakening","ascension","divine","restoration"})if(core.is(ModItems.ALTAR_ITEMS.get(kind+"_core").get()))ritual=kind;
+        String ritual=f.state.equals("ACTIVE")?"awakening":"activation";var core=AltarInventory.decode(p.level(),f.core);
+        var viewerRecord=br.com.soulbound.companion.identity.SoulboundSavedData.get(p.level().getServer()).find(p.getUUID());
+        if(f.state.equals("ACTIVE") && core.isEmpty() && viewerRecord!=null && viewerRecord.evolutionStage().equals("PLENO") && !viewerRecord.unlockedForms().contains("GOD"))ritual="divine";
+        if(f.state.equals("ACTIVE") && core.isEmpty() && viewerRecord!=null && viewerRecord.evolutionStage().equals("JUNIOR"))ritual="ascension";
+        if(f.state.equals("ACTIVE") && viewerRecord!=null && viewerRecord.canResurrect())ritual="restoration";
+        else if(f.state.equals("ACTIVE"))for(String kind:new String[]{"awakening","ascension","divine","restoration"})if(core.is(ModItems.ALTAR_ITEMS.get(kind+"_core").get()))ritual=kind;
         var costs=ritual.equals("activation")?RitualDefinitions.activation(p.level()):RitualDefinitions.offerings(p.level(),ritual);
         var materials=new ArrayList<Component>();
         for(var cost:costs){var item=net.minecraft.core.registries.BuiltInRegistries.ITEM.getValue(net.minecraft.resources.Identifier.parse(cost.item()));materials.add(Component.literal(cost.count()+" × ").append(item.getName()));}
@@ -47,7 +51,7 @@ public final class ForgeService {
         p.openMenu(new SimpleMenuProvider((id,inv,ignored)->new ForgeMenu(id,inv,f.id),title),buffer->{buffer.writeVarInt(ForgeActivation.view(f));for(var text:materials)net.minecraft.network.chat.ComponentSerialization.STREAM_CODEC.encode(buffer,text);net.minecraft.network.chat.ComponentSerialization.STREAM_CODEC.encode(buffer,coreName);net.minecraft.network.chat.ComponentSerialization.STREAM_CODEC.encode(buffer,feedback);});
     }
     public static boolean reject(ServerPlayer p,String reason){return reject(p,Component.translatable("message.soulbound.forge_error."+reason));}
-    private static boolean reject(ServerPlayer p,Component message){
+    public static boolean reject(ServerPlayer p,Component message){
         p.displayClientMessage(message,false);
         if(p.containerMenu instanceof ForgeMenu menu && menu.stillValid(p)){
             var f=menu.forge(p);open(p,new BlockPos(f.x,f.y,f.z),message);
@@ -72,7 +76,7 @@ public final class ForgeService {
         boolean first=f.owner==null;
         var costs=RitualDefinitions.activation(level);
         var keys=offeringKeys(level,f,rotation);
-        if(keys.stream().anyMatch(key->InventoryTransfers.pending(d,key)) || InventoryTransfers.pending(d,"forge/"+f.id))return reject(p,"transfer");
+        if(keys.stream().anyMatch(key->InventoryTransfers.pending(d,key) || RitualService.locked(level,BlockPos.of(Long.parseLong(key.substring(key.lastIndexOf(':')+1))))) || InventoryTransfers.pending(d,"forge/"+f.id))return reject(p,"transfer");
         for(int i=0;i<3;i++)if(!costs.get(i).matches(AltarInventory.decode(level,d.state.slots.get(keys.get(i))))){
             var item=net.minecraft.core.registries.BuiltInRegistries.ITEM.getValue(net.minecraft.resources.Identifier.parse(costs.get(i).item()));
             return reject(p,Component.translatable("message.soulbound.forge_error.offering",Component.translatable("menu.soulbound.offering_position."+i),costs.get(i).count(),item.getName()));

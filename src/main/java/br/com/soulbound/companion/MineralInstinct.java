@@ -28,11 +28,11 @@ public final class MineralInstinct {
             origin = null;
             return;
         }
-        if (origin != null && (radius != Config.MINERAL_RADIUS.get()
+        if (origin != null && (radius != br.com.soulbound.companion.progression.TalentEffects.mineralRadius(companion)
                 || origin.distSqr(companion.blockPosition()) > radius * radius / 4.0)) origin = null;
         if (origin == null) {
             if (level.getGameTime() < nextScan) return;
-            radius = Config.MINERAL_RADIUS.get();
+            radius = br.com.soulbound.companion.progression.TalentEffects.mineralRadius(companion);
             origin = companion.blockPosition();
             cursor = 0;
             bestRank = 0;

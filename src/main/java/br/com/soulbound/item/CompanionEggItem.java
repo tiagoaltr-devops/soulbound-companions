@@ -70,7 +70,7 @@ public class CompanionEggItem extends Item {
         var record = SoulboundIdentity.validateEgg(serverPlayer, player.getItemInHand(hand));
         if (record == null) return InteractionResult.FAIL;
         if (record.companionStatus() != CompanionStatus.ACTIVE) {
-            if (!record.canSummon()) SoulboundIdentity.message(serverPlayer, "companion_unavailable");
+            if (!record.canSummon()) SoulboundIdentity.message(serverPlayer, record.companionStatus()==CompanionStatus.DEAD?"companion_dead":"companion_unavailable");
             return record.canSummon() ? InteractionResult.PASS : InteractionResult.FAIL;
         }
         return command(serverPlayer, hand, record);
@@ -103,7 +103,7 @@ public class CompanionEggItem extends Item {
         if (record == null) return InteractionResult.FAIL;
         if (record.companionStatus() == CompanionStatus.ACTIVE) return command(serverPlayer, context.getHand(), record);
         if (!record.canSummon()) {
-            SoulboundIdentity.message(serverPlayer, "companion_unavailable");
+            SoulboundIdentity.message(serverPlayer, record.companionStatus()==CompanionStatus.DEAD?"companion_dead":"companion_unavailable");
             return InteractionResult.FAIL;
         }
         for (var dimension : serverLevel.getServer().getAllLevels()) {

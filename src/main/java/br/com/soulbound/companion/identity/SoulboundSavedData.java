@@ -53,6 +53,7 @@ public final class SoulboundSavedData extends SavedData {
         return data;
     }
 
+    public java.util.List<SoulboundRecord> snapshot(){return java.util.List.copyOf(records.values());}
     public @Nullable SoulboundRecord find(UUID owner) { return records.get(owner); }
 
     public void put(SoulboundRecord record) {

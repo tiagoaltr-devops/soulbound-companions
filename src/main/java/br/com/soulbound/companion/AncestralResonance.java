@@ -42,7 +42,7 @@ public final class AncestralResonance {
         var server=p.level().getServer();var record=SoulStaffCommands.authorize(p,p.getItemInHand(hand));
         if(record==null || !record.matches(session.ownerUuid(),session.bondUuid(),session.companionUuid())){tell(p,"unavailable");return false;}
         var companion=SoulStaffCommands.loadedCompanion(p,record);
-        if(companion==null || companion.distanceToSqr(p)>256 || companion.resonanceGoal().active() || SoulRecallService.inProgress(server,record.bondUuid())
+        if(companion==null || companion.distanceToSqr(p)>256 || companion.resonanceGoal().active() || br.com.soulbound.companion.CompanionFormService.busy(companion) || SoulRecallService.inProgress(server,record.bondUuid())
                 || !p.level().dimension().equals(net.minecraft.world.level.Level.OVERWORLD)){tell(p,"unavailable");return false;}
         int seconds=remainingSeconds(server,p.getUUID());if(seconds>0){tell(p,"cooldown",seconds);return false;}
         var searches=SEARCHES.computeIfAbsent(server,k->new LinkedHashMap<>());

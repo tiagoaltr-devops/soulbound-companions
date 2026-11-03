@@ -28,7 +28,7 @@ public final class AncestralResonanceGoal extends Goal {
     public boolean active(){return flight.active();}
     public boolean begin(Vec3 direction){
         if(!(companion.level() instanceof ServerLevel level) || active())return false;
-        for(double distance:new double[]{10,8,12})for(double height:new double[]{.5,1.2,2}){
+        for(double distance:new double[]{10,8,12})for(double height:companion.isGroundForm()?new double[]{0,.5,1}:new double[]{.5,1.2,2}){
             var point=companion.position().add(direction.scale(distance)).add(0,height,0);
             if(!BabyFlightTargets.canOccupy(companion,point))continue;
             var path=companion.getNavigation().createPath(BlockPos.containing(point),0);
@@ -51,6 +51,10 @@ public final class AncestralResonanceGoal extends Goal {
         if(!active()){cancel();return;}
         if(flight.phase()==ResonanceFlightState.Phase.OUTBOUND && !outboundStarted){outboundStarted=true;companion.getNavigation().moveTo(prepared,1.15);}
         if(now%4==0)level.sendParticles(ParticleTypes.SOUL,companion.getX(),companion.getY()+.5,companion.getZ(),3,.15,.2,.15,.01);
+        if(now%8==0 && companion.talents().resonance()>0){
+            var direction=(flight.phase()==ResonanceFlightState.Phase.RETURN?owner.position():destination).subtract(companion.position()).normalize();
+            for(int i=1;i<=companion.talents().resonance();i++){var point=companion.position().add(direction.scale(i)).add(0,.5,0);level.sendParticles(ParticleTypes.END_ROD,point.x,point.y,point.z,1,.03,.03,.03,0);}
+        }
         if(flight.phase()==ResonanceFlightState.Phase.HOLD){companion.stopFlight();return;}
         if(flight.phase()==ResonanceFlightState.Phase.RETURN && --replan<=0){
             replan=10;var target=BabyFlightTargets.nearOwner(companion,owner);

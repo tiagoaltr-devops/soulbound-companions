@@ -5,6 +5,9 @@ import net.neoforged.neoforge.common.ModConfigSpec;
 /** Server-authoritative exploration settings. Durations are measured in game ticks (20/s). */
 public final class Config {
     private static final ModConfigSpec.Builder BUILDER = new ModConfigSpec.Builder();
+    public static final ModConfigSpec.BooleanValue DEVELOPMENT_ARTIFICIAL_COMBAT_XP = BUILDER
+            .comment("Development only: allow companion combat XP from COMMAND, SPAWN_ITEM_USE and unknown-origin mobs (/summon with NBT can skip finalizeSpawn). NoAI, known spawners, invalid targets and duplicate rewards remain blocked. Keep false for survival.")
+            .define("developmentAllowArtificialCombatXp", false);
     public static final ModConfigSpec.IntValue THREAT_RADIUS = BUILDER
             .comment("Threat detection radius in blocks.")
             .defineInRange("threatRadius", 12, 4, 32);
@@ -36,6 +39,10 @@ public final class Config {
     public static final ModConfigSpec.DoubleValue FORGE_CRITICAL_CHANCE = BUILDER.defineInRange("forgeCriticalGivenFailure",.25,0,1);
     public static final ModConfigSpec.IntValue RESONANCE_RADIUS=BUILDER.defineInRange("resonanceRadius",5000,1000,5000);
     public static final ModConfigSpec.IntValue RESONANCE_COOLDOWN=BUILDER.defineInRange("resonanceCooldownTicks",600,20,12000);
+    public static final ModConfigSpec.DoubleValue JUNIOR_ATTACK_DAMAGE=BUILDER.defineInRange("juniorAttackDamage",4.0,0,100);
+    public static final ModConfigSpec.IntValue JUNIOR_ATTACK_INTERVAL=BUILDER.defineInRange("juniorAttackIntervalTicks",20,5,200);
+    public static final ModConfigSpec.DoubleValue JUNIOR_ULTIMATE_DAMAGE=BUILDER.defineInRange("juniorUltimateDamage",8.0,0,100);
+    public static final ModConfigSpec.IntValue TALENT_MINERAL_INCREMENT=BUILDER.defineInRange("talentMineralRadiusPerRank",2,0,6);
     public static final ModConfigSpec SPEC = BUILDER.build();
 
     private Config() {}

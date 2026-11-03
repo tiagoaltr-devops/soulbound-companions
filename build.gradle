@@ -71,9 +71,12 @@ neoForge {
         }
         phase611Server {
             server()
-            gameDirectory = project.file('runs/phase611-server')
+            systemProperty 'soulbound.combatChecks', providers.gradleProperty('combatLiveChecks').isPresent().toString()
+            systemProperty 'soulbound.survivalChecks', providers.gradleProperty('survivalLiveChecks').isPresent().toString()
+            systemProperty 'soulbound.restartChecks', providers.gradleProperty('restartLiveChecks').isPresent().toString()
+            gameDirectory = project.file(providers.gradleProperty('survivalLiveChecks').isPresent() ? 'runs/phase69-server' : 'runs/phase611-server')
             programArgument '--nogui'
-            programArguments.addAll '--port', '25578'
+            programArguments.addAll '--port', providers.gradleProperty('survivalLiveChecks').isPresent() ? '25579' : '25578'
         }
 
         // This run config launches GameTestServer and runs all registered gametests, then exits.
@@ -105,7 +108,7 @@ neoForge {
             // Recommended logging level for the console
             // You can set various levels here.
             // Please read: https://stackoverflow.com/questions/2031163/when-to-use-the-different-log-levels
-            logLevel = org.slf4j.event.Level.DEBUG
+            logLevel = org.slf4j.event.Level.INFO
         }
     }
 
@@ -230,6 +233,11 @@ def altarChecks = tasks.register('altarChecks', JavaExec) {
     mainClass = 'br.com.soulbound.ritual.AltarChecks'
 }
 tasks.named('check').configure { dependsOn altarChecks }
+tasks.register('identitySnapshot',JavaExec){
+    dependsOn tasks.named('testClasses')
+    classpath=sourceSets.test.runtimeClasspath
+    mainClass='br.com.soulbound.companion.IdentitySnapshot'
+}
 def resonanceChecks = tasks.register('resonanceChecks', JavaExec) {
     dependsOn tasks.named('testClasses')
     classpath = sourceSets.test.runtimeClasspath
@@ -238,6 +246,36 @@ def resonanceChecks = tasks.register('resonanceChecks', JavaExec) {
 tasks.named('check').configure { dependsOn resonanceChecks }
 // These executable checks use JavaExec rather than a downloaded JUnit engine.
 tasks.named('test', Test).configure { failOnNoDiscoveredTests = false }
+
+// Diagnostic registrations have no runtime callers. Keep them in IDE runs, outside the public artifact.
+tasks.named('jar', Jar).configure {
+    exclude 'br/com/soulbound/companion/progression/ProgressionCommands.class'
+    exclude 'br/com/soulbound/ritual/AltarCommands.class'
+    exclude 'br/com/soulbound/ritual/RuinDiagnostics.class'
+}
+def releaseJarChecks = tasks.register('releaseJarChecks') {
+    def releaseFile = tasks.named('jar', Jar).flatMap { it.archiveFile }
+    inputs.file(releaseFile)
+    dependsOn tasks.named('jar')
+    doLast {
+        def artifact = releaseFile.get().asFile
+        def zip = new java.util.zip.ZipFile(artifact)
+        try {
+            def names = zip.entries().collect { it.name }
+            def forbidden = names.findAll { it.endsWith('Checks.class') || it.contains('ServerChecks') || it.contains('IdentitySnapshot') || it.endsWith('ProgressionCommands.class') || it.endsWith('AltarCommands.class') || it.endsWith('RuinDiagnostics.class') || it.endsWith('.bbmodel') }
+            if (!forbidden.isEmpty()) throw new GradleException("Development files in release: ${forbidden}")
+            ['META-INF/neoforge.mods.toml', 'assets/soulbound/lang/pt_br.json', 'assets/soulbound/lang/en_us.json',
+             'assets/soulbound/textures/entity/lupus_baby.png', 'assets/soulbound/textures/entity/lupus_junior.png',
+             'assets/soulbound/textures/entity/lupus_pleno.png', 'assets/soulbound/textures/entity/lupus_god_prime.png',
+             'assets/soulbound/textures/entity/lupus_junior_irushia.png', 'assets/soulbound/credits/irushia.txt',
+             'assets/soulbound/textures/entity/lupus_pleno_brambleback.png', 'assets/soulbound/credits/brambleback.txt'].each {
+                if (!names.contains(it)) throw new GradleException("Missing release resource: ${it}")
+            }
+            logger.lifecycle('Release JAR verified: metadata, textures, translations and development exclusions')
+        } finally { zip.close() }
+    }
+}
+tasks.named('check').configure { dependsOn releaseJarChecks }
 
 // IDEA no longer automatically downloads sources/javadoc jars for dependencies, so we need to explicitly enable the behavior.
 idea {

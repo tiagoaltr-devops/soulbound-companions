@@ -187,7 +187,7 @@ public final class SoulboundIdentity {
         if (!isCanonical(companion)) return;
         var server = ((ServerLevel) companion.level()).getServer();
         var data = SoulboundSavedData.get(server);
-        var record = data.find(companion.getOwnerUuid());
+        br.com.soulbound.companion.CompanionEquipment.capture(companion);var record = data.find(companion.getOwnerUuid());
         data.put(record.withState(record.companionStatus(), record.resurrectionRequired(), companion.getBehaviorMode().name()));
         var owner = server.getPlayerList().getPlayer(record.ownerUuid());
         if (owner != null) synchronizePlayer(owner);
@@ -237,11 +237,11 @@ public final class SoulboundIdentity {
         if (!(event.getEntity() instanceof LupusCompanionEntity companion) || !(event.getLevel() instanceof ServerLevel level)
                 || companion.getOwnerUuid() == null) return;
         var data = SoulboundSavedData.get(level.getServer());
-        var record = data.find(companion.getOwnerUuid());
+        br.com.soulbound.companion.CompanionEquipment.capture(companion);var record = data.find(companion.getOwnerUuid());
         if (record == null || !record.matches(companion.getOwnerUuid(), companion.getBondUuid(), companion.getUUID())) return;
         record = record.withRecall(record.recall().at(level.dimension(), companion.position(), level.getServer().overworld().getGameTime()));
         data.put(record);
-        var reason = companion.getRemovalReason();
+        var reason = companion.getRemovalReason();companion.plenoCombat().cancelAll();
         if (reason == Entity.RemovalReason.KILLED || reason == Entity.RemovalReason.DISCARDED) {
             data.put(record.withState(reason == Entity.RemovalReason.KILLED ? CompanionStatus.DEAD : CompanionStatus.MISSING,
                     reason == Entity.RemovalReason.KILLED, record.behaviorMode()));

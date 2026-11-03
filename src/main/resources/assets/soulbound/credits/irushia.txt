@@ -1,0 +1,12 @@
+Baby Dragon Irushia
+Creator: kyoukster (@kyoukster)
+Source: https://blockbenchworkshop.com/model/kyoukster/baby-dragon-irushia
+License declared by the source: Creative Commons Attribution 4.0 International (CC BY 4.0)
+License: https://creativecommons.org/licenses/by/4.0/
+
+Adapted for Soulbound Companions as the Lupus Junior visual.
+Changes: converted Blockbench bones, rotated cubes, box UVs and pivots to native
+Minecraft 1.21.11 Java geometry; replaced the embedded idle animation with native
+procedural idle/walk/attack/ritual poses driven by existing companion render states.
+The embedded texture is redistributed unchanged. No endorsement by the creator
+is implied. Original .bbmodel retained separately as an authoring source.

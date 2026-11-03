@@ -45,6 +45,7 @@ public final class SoulEggIdentity {
                 Component.translatable("tooltip.soulbound.owner", record.ownerLastKnownName()),
                 Component.translatable("tooltip.soulbound.species", translated("species", record.species())),
                 Component.translatable("tooltip.soulbound.stage", translated("stage", record.evolutionStage())),
+                Component.translatable("menu.soulbound.active_form", translated("stage", record.activeForm())),
                 Component.translatable("tooltip.soulbound.status", translated("status", record.companionStatus().name())),
                 Component.translatable("tooltip.soulbound.mode", translated("behavior", record.behaviorMode())),
                 Component.translatable("tooltip.soulbound.permanent"))));

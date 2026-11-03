@@ -17,7 +17,8 @@ public final class BabyHoverGoal extends Goal {
     }
 
     @Override
-    public boolean canUse() { return !companion.isPassenger(); }
+    public boolean canUse() { return !companion.isGroundForm() && !companion.isPassenger(); }
+    @Override public boolean canContinueToUse(){return canUse();}
 
     @Override
     public boolean requiresUpdateEveryTick() { return true; }

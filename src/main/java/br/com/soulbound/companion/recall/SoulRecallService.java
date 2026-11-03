@@ -80,6 +80,7 @@ public final class SoulRecallService {
         var server = player.level().getServer();
         var record = authorized(player, hand, session);
         if (record == null) { tell(player, "denied"); return false; }
+        if(br.com.soulbound.companion.CompanionFormService.ritualBusy(server,player.getUUID())){tell(player,"denied");return false;}
         int seconds = record.recall().remainingSeconds(now(server));
         if (seconds > 0) { tell(player, "cooldown", seconds); return false; }
         br.com.soulbound.companion.AncestralResonance.cancel(player,record);

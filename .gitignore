@@ -1,42 +1,64 @@
-### Gradle ###
-.gradle
-build/
-.vscode
-runs/
+# Gradle/build output (keep the wrapper required by a fresh clone).
+.gradle/
+/.kotlin/
+/build/
+/bin/
+/out/
+/repo/
+*.class
+*.jar
 !gradle/wrapper/gradle-wrapper.jar
-!**/src/**/build/
 
-### IntelliJ IDEA ###
+# Local Minecraft instances: worlds, player data, logs and server credentials.
+/run/
+/runs/
+/run-data/
+/logs/
+/crash-reports/
+**/src/generated/**/.cache/
+hs_err_pid*.log
+replay_pid*.log
+*.hprof
+
+# IDE files contain machine-specific paths; regenerate them after import.
+.vscode/
 .idea/
+.run/
 *.iws
 *.iml
 *.ipr
-out/
-!**/src/**/out/
-
-.run/
-
-### Eclipse ###
-.apt_generated
+.apt_generated/
 .classpath
 .eclipse/
 .factorypath
 .project
-.settings
+.settings/
 .springBeans
-.sts4-cache
-bin/
-!**/src/**/bin/
+.sts4-cache/
+*.code-workspace
 
-### VS Code ###
-.vscode/
+# Local credentials. Use placeholders in any committed examples.
+.env
+.env.*
+!.env.example
+!.env.*.example
+/gradle-local.properties
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.keystore
 
-### Mac OS ###
+# OS/editor temporary files and an accidental shell-output file in the root.
 .DS_Store
+Thumbs.db
+Desktop.ini
+*~
+*.swp
+*.swo
+*.tmp
+/=0
 
-### Minecraft Modding ###
-run/
-!**/src/**/run/
-**/src/generated/**/.cache/
-repo/
-!**/src/**/repo/
+# Keep .bbmodel authoring sources, generated Java, PNGs, credits and datapacks.
+# Import scripts depend on the two .bbmodel files currently stored in the root.

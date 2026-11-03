@@ -2,7 +2,7 @@
 
 Minecraft Java **1.21.11** · NeoForge **21.11.48** · Mod ID: `soulbound`.
 
-Este manual descreve o código atual, incluindo a Fase 6.3.1. Receitas, custos e
+Este manual descreve o código atual, incluindo a Fase 6.4. Receitas, custos e
 intervalos abaixo são os padrões do projeto; configurações do servidor e datapacks
 podem substituí-los. Tempos em segundos pressupõem 20 ticks por segundo.
 Implementado não significa homologado em partida: veja as limitações no fim.
@@ -41,6 +41,20 @@ A tooltip informa proprietário, espécie, estágio, estado e modo.
 
 ## 2. Bastão, movimento e sobrevivência
 
+### Painel de status na tela principal
+
+O canto superior esquerdo mostra Lupus, forma ativa, nível, coração e barra
+vermelha de HP, além de valores/barra ciano de XP. Os dados vêm do servidor e
+acompanham dano, cura, regeneração, talentos, transformação e level-up.
+
+Morto: 0 HP, mantendo nível/XP. Não invocado ou descarregado: mensagem própria,
+sem estimar vida desconhecida. No nível 30, exibe MAX e barra de XP completa.
+Após ressuscitar, o painel aguarda a invocação para mostrar HP real novamente.
+
+O painel respeita a escala de GUI, se desloca abaixo de boss bars quando necessário
+e fica oculto em menus, F1, F3 e Tab. Não substitui a vida ou o XP do jogador.
+Inspeção visual pendente: [complemento de HUD da Fase 6.6](FASE_6_6_HUD.md).
+
 - **Botão direito com o Bastão:** alterna Seguir e Ficar.
 - **Shift + botão direito:** abre o menu de comandos.
 - **Botão direito diretamente no Lupus:** o proprietário alterna Seguir/Ficar.
@@ -48,7 +62,7 @@ A tooltip informa proprietário, espécie, estágio, estado e modo.
 - **Ficar:** paira próximo ao ponto definido. Fuga emergencial pode afastá-lo
   temporariamente; depois, retorna ao ponto, preservando o modo.
 
-O Lupus é passivo: não inicia ataques contra jogadores ou mobs. O Baby possui
+O Baby é passivo: não inicia ataques contra jogadores ou mobs. Ele possui
 **12 pontos de vida**, asas animadas e movimento flutuante.
 
 ### Alerta de ameaças e fuga
@@ -96,9 +110,7 @@ Ele indica a direção; não percorre sozinho os milhares de blocos até a ruín
 descarregados ou nunca visitados por você. Não confirma ruínas em terreno ainda
 não gerado e não gera chunks para procurá-las. Há limites de processamento por busca.
 
-Ruínas novas integram praças decorativas de vilas, no máximo uma por vila, a pelo
-menos **500 blocos do spawn** e **1.000 blocos entre ruínas**. São raras: nem toda
-vila possui uma. A geração atual deve ser testada em mundo Normal, não Superflat.
+Ruínas novas integram praças decorativas de vilas, no máximo uma por vila, com **50% de chance por vila**, sem distância mínima padrão do spawn ou entre ruínas. A geração atual deve ser testada em mundo Normal, não Superflat.
 Chunks antigos não recebem ruínas retroativamente. O sino da praça substituída é
 removido apenas na geração nova; sinos de outras peças não são alvo da remoção.
 
@@ -244,15 +256,16 @@ carregue-o na Forja ativa:
 
 | Ritual | Altar oposto | Altar esquerdo | Altar direito | Níveis do dono / visitante | Aplicação |
 | --- | --- | --- | --- | --- | --- |
-| Despertar | 2 diamantes | 8 fragmentos de ametista | 16 lápis-lazúlis | 30 / 35 | Baby ACTIVE → Junior |
-| Ascensão | 1 lingote de netherita | 2 fragmentos de eco | 1 bloco de diamante | 45 / 50 | Junior ACTIVE → Pleno |
-| Divino | 1 Essência Dracônica | 1 estrela do Nether | 4 cristais do End | 60 / 65 | Pleno ACTIVE → desbloqueia God uma vez |
+| Despertar | 2 diamantes | 8 fragmentos de ametista | 16 lápis-lazúlis | 30 / 35 | Baby ACTIVE → Núcleo Junior; aplicação desbloqueia a forma |
+| Ascensão | 1 lingote de netherita | 2 fragmentos de eco | 1 bloco de diamante | 45 / 50 | Junior desbloqueado, vínculo ACTIVE, nível 15 → Núcleo Pleno |
+| Divino | 1 Essência Dracônica | 1 estrela do Nether | 4 cristais do End | 60 / 65 | Pleno desbloqueado, vínculo ACTIVE e nível 25 → Núcleo God |
 | Restauração | 4 diamantes | 1 lírio-do-vale | 1 lágrima de ghast | 25 / 30 | DEAD → renascimento Baby |
 
-A duração padrão é de **15 segundos**. São cobrados **níveis inteiros**, não pontos
+Baby → Junior dura **20 segundos**; Junior → Pleno dura **30 segundos** e a infusão God dura **45 segundos**. Os demais rituais mantêm
+o padrão de **15 segundos**. São cobrados **níveis inteiros**, não pontos
 brutos de experiência. Visitantes usam o próprio vínculo e pagam a sobretaxa indicada.
-O Core Carregado pode ser negociado; o destinatário precisa cumprir os requisitos
-de seu próprio vínculo. O token é de uso único.
+Os **Núcleos Junior, Pleno e God** são validados pelo proprietário e vínculo da infusão. Outros
+Cores Carregados mantêm a negociação anterior. Todos são de uso único.
 
 Sair da plataforma, morrer, desconectar ou invalidar estrutura/vínculo cancela o
 ritual. Core bruto e oferendas voltam aos espaços canônicos, mas **XP não é devolvido**.
@@ -263,27 +276,108 @@ por uma tentativa cancelada.
 
 | Forma | Vida máxima | Escala relativa | Natureza |
 | --- | --- | --- | --- |
-| Baby | 12 | 1 | Permanente |
-| Junior | 24 | 1,2 | Permanente |
-| Pleno | 40 | 1,45 | Permanente |
-| God | 80 | 1,7 | Temporária, desbloqueada para Pleno |
+| Baby | 33,6 | 1 | Permanente |
+| Junior | 33,6 | 1 | Forma desbloqueada permanentemente; visual de pequeno dragão Irushia |
+| Pleno | 33,6 | 1 | Visual Brambleback, criatura robusta com golpes de braços |
+| God Prime | 67,2 | 1 | Temporária, modelo próprio; exige desbloqueio |
 
-Junior, Pleno e God ainda reutilizam o visual Baby escalado. Todos continuam
-passivos nesta implementação; não há sistema de combate avançado.
+Junior usa o visual Baby Dragon Irushia, de kyoukster (CC BY 4.0), com navegação
+terrestre e combate preservados. As asas são visuais e não concedem voo.
+Detalhes e créditos: [visual Junior Irushia](JUNIOR_IRUSHIA.md).
+Pleno usa o visual Brambleback, de monkus (CC BY-SA 4.0), preservando seu combate.
+Detalhes e créditos: [visual Pleno Brambleback](PLENO_BRAMBLEBACK.md).
+God Prime possui modelo próprio, barreira espiritual e combate supremo temporário.
+
+Após a infusão, combine **Núcleo Junior + seu Bastão** na bancada. O Lupus permanece
+Baby: o resultado desbloqueia Junior, sem transformação automática. No menu do
+Bastão, selecione Baby, Junior ou Pleno desbloqueados; há intervalo de **3 segundos** entre trocas e
+validação de espaço para o novo corpo. UUIDs e vínculo não mudam.
+
+Modos no menu: **Seguir/Combate** acompanha e permite ataques apenas em Junior;
+**Ficar** e **Seguir (passivo)** bloqueiam ataques e ultimate. O Baby nunca ataca.
+Junior procura hostis próximos ao dono e não ataca jogadores, aliados, outros
+companheiros ou Guardiões da provação.
+
+Com Junior ativo em Seguir/Combate, pressione **R** para
+**Ruptura Ancestral** (tecla alterável nos controles). A onda afeta hostis válidos
+em até **5 blocos**, com linha de visão, sem explosão/destruição. Cooldown de
+**60 segundos**, persistente e exibido no menu. Dano padrão: **4** no ataque básico
+e **8** na ultimate; intervalo básico de **20 ticks**. Esses danos e intervalo
+podem ser configurados pelo servidor.
+
+Desde a Fase 6.4.1, a ultimate não exige o Bastão na mão: a identidade é validada
+diretamente no servidor. A tecla também funciona no menu do companheiro; outras
+telas, como o chat, não acionam o atalho. A HUD mostra a tecla configurada, estado
+pronto/bloqueado ou cooldown. Se houver conflito com outro mod, remapeie nos controles.
+O botão **Seguir / Combate** habilita combate no Junior, Pleno e God; **Seguir (passivo)** não.
+Trocar de forma preserva o modo anterior. Não existe modo Berserker nesta fase.
 
 Após aplicar o Core Divino, use o botão God no Bastão ou `/soulbound god`.
-A forma dura **60 segundos**, com cooldown de **15 minutos a partir da ativação**,
+A forma dura **60 segundos**, com cooldown de **5 minutos a partir da ativação**,
 controlado pelo relógio persistente do servidor.
 
 ### Restauração
 
 Exige companheiro DEAD e ressurreição necessária. Reutiliza os mesmos UUIDs de
-proprietário, vínculo e companheiro. O retorno é Baby em Seguir, progresso zero,
-capacidade/cooldown God reiniciados, preservando o histórico de ressurreições.
+proprietário, vínculo e companheiro. A Forja ativa mostra **Ressuscitar Companheiro**
+para o dono do vínculo morto, mesmo sem entidade ativa no mundo.
+
+Fabrique o **Core da Restauração** (1 lírio-do-vale + 4 diamantes), insira-o na
+Forja e deposite **4 diamantes / 1 lírio-do-vale / 1 lágrima de ghast** nos altares
+oposto/esquerdo/direito. Fique na plataforma e confirme a Ressurreição: custo padrão
+de **25 níveis para o dono da Forja ou 30 para visitante**, duração padrão de
+**15 segundos**, com progresso na janela. Materiais do crafting e oferendas são custos
+separados. Cancelamento segue a regra normal: materiais retornam, XP não.
+
+Ao concluir, o vínculo fica **READY**. Use seu ovo em um bloco válido para invocar
+o Baby em Seguir (passivo), sem criar outro vínculo. Estágio máximo, arquétipo,
+formas desbloqueadas, progresso e cooldowns permanentes são preservados, incluindo
+Junior. Depois, selecione Junior na HUD respeitando o cooldown de transformação.
+A forma temporária God em andamento é encerrada, sem apagar seu desbloqueio.
+Não é necessário combinar outro Core Carregado após esse ritual direto da Forja.
+Um Core da Restauração Carregado legado ainda pode ser aplicado pela receita antiga,
+liberando a mesma recuperação para READY, sem apagar as formas.
 MISSING não autoriza recriação automática. Recuperar apenas o ovo nunca substitui
 o ritual de Restauração.
 
-## 8. Comandos e identificadores úteis
+## 8. Progressão RPG e talentos — Fase 6.5
+
+O vínculo tem **XP próprio**, separado dos níveis do jogador. Começa no nível 1,
+com 0 XP; vai até 30 e ganha 1 ponto de talento por nível a partir do 2 (máximo 29).
+A necessidade para L → L+1 é `50 + 20*(L-1) + 5*(L-1)²`. Troca de forma, morte,
+ressurreição e Recall preservam XP, nível e talentos.
+
+Fontes: participação efetiva em mortes de hostis naturais (8 XP comum, 25 perigoso
+com vida máxima ≥40, 200 Ender Dragon/Wither), descobertas confirmadas (30 XP) e
+novas conclusões de prova ancestral (100 XP). Descobertas/provas não se repetem por
+vínculo. Participação em combate tem janela de 15 segundos. Comandos, ovos,
+spawners, mobs sem IA e origens desconhecidas não concedem XP de combate.
+
+Clique no botão de nível/XP/pontos do menu do Bastão para abrir **Talentos**.
+Use as abas Principal, Baby e Junior e as setas para navegar; o cartão informa
+efeito, pré-requisitos, máximo e motivo do bloqueio. Todos os ramos gastam o mesmo
+saldo. Investir em Junior exige desbloqueá-lo, mas não estar nessa forma no momento.
+
+| Ramo | Talentos e efeitos por ponto |
+| --- | --- |
+| Principal | Vitalidade +4% vida (5); Força +3% dano em forma ofensiva (5); Sintonia +5% XP (3); Pele +3% redução de dano (3); Regeneração +0,1 HP/s fora de combate (3) |
+| Baby | Olhar +2 blocos de busca mineral, configurável, limite 32 (3); Ressonância com mais marcadores de direção (3); Aura Resistência I ao dono em raio 6/8/10, sem acumular (3); Vínculo +5% XP de descobertas (3) |
+| Junior | Golpe +4% dano básico (5); Predador +3% velocidade de ataque (3); Ruptura +8% dano especial (3); Sintonia -4% cooldown da ultimate (3); Fúria +10% dano por 5 s após eliminação elegível, intervalo interno 20 s (1) |
+
+Os números entre parênteses são os máximos de pontos. Bônus de XP preservam as
+frações. Regeneração exige 5 segundos sem combate/dano. Os talentos de uma forma
+ficam inativos ao selecionar outra. Eles não liberam ataques em Baby/Ficar/Passivo.
+
+**Redistribuir talentos:** na Forja ativa, retire o núcleo, deposite **8 fragmentos
+de ametista no altar oposto**, fique na plataforma e clique no botão ao lado de
+Trocar núcleo. Custa **10 níveis do jogador** e dura **10 segundos**, sem chance
+de falha. Devolve todos os pontos conquistados, sem apagar nível, XP, formas ou
+progressão ritualística. Cancelamento devolve materiais, mas não XP do jogador.
+Não confunda o nível RPG do companheiro com os níveis de experiência cobrados na Forja.
+
+Requisitos completos e roteiro de homologação: [Fase 6.5](FASE_6_5_PROGRESSAO.md).
+
+## 9. Comandos e identificadores úteis
 
 Comandos administrativos exigem as permissões apropriadas. `/give` não fabrica
 tokens oficiais de Centelha, Forja ou Core Carregado.
@@ -319,7 +413,7 @@ vínculo existente, sem criar outro companheiro.
 | Core da Restauração | `soulbound:restoration_core` |
 | Core Carregado, tipo validado pelo servidor | `soulbound:charged_core` |
 
-## 9. Problemas comuns e estado de validação
+## 10. Problemas comuns e estado de validação
 
 - **Forja aparece e some ao colocar:** confirme que foi fabricada com Centelha
   válida; versões vazias do Criativo/comandos e cópias já colocadas são recusadas.
@@ -340,3 +434,24 @@ devem ser testados em mundo de cópia; este manual não declara aprovação dess
 
 Roteiros: [ativação e apresentação da Forja](FASE_6_3_1_ATIVACAO.md) e
 [checklist geral](FASE_6_CHECKLIST.md).
+
+
+### Pleno — Fase 6.7
+
+Combine Núcleo Pleno + seu Bastão na bancada após a Ascensão. O desbloqueio não altera a forma ativa. Em Seguir/Combate: combo 100/100/150%, Investida 130% (12 s), Abalo 80% (raio 4, 18 s). R prepara Cataclismo por 1,5 s, raio 6 e 250% do dano básico, com cooldown próprio de 90 s reservado no início. Cinco talentos de até três ranks compartilham os pontos existentes. Consulte [detalhes e testes manuais](FASE_6_7_PLENO.md).
+
+### Homologação de XP — Correção 6.7.1
+
+Operadores nível 2 podem usar /soulbound debug setlevel 15 e /soulbound debug addxp 110 no próprio vínculo. Setlevel zera o XP do nível e recusa talentos incompatíveis. Para testar combate com mobs de comando/ovos, consulte a opção de desenvolvimento e o roteiro em [Correção 6.7.1](CORRECAO_6_7_1_XP.md).
+
+### God Prime — Fase 6.8
+
+Após a infusão Divina, combine Núcleo God + seu Bastão na bancada. Com Pleno ativo, selecione God no menu: 60 s, cooldown de 5 min desde a ativação. O tempo usa ticks persistidos do servidor e pausa com ele desligado. God recebe uma barreira única de 30% da vida máxima efetiva; não cura HP. Ao terminar, retorna Pleno sem escudo. R executa Apocalipse Ancestral (preparo 2 s, raio 8, 450%, cooldown 120 s). Os cinco talentos God compartilham os pontos existentes. Veja [regras, persistência e checklist](FASE_6_8_GOD_PRIME.md).
+
+### Sobrevivência e equipamentos — Fase 6.9
+
+Baby, Junior e Pleno compartilham 33,6 HP-base; God mantém 67,2. Após oito segundos sem combate, regeneram a cada dois segundos 0,5/1/1,5/2 HP, mais o talento. Trocas normais e aumentos de máximo não curam. O retorno God usa o fator da ativação para impedir cura ao trocar equipamentos durante a transformação.
+
+No Bastão, use Equipamentos a até oito blocos do companheiro: quatro armaduras, uma arma e quatro alimentos. Itens e encantamentos compatíveis funcionam sem aparecer no modelo e permanecem no vínculo após morte/ressurreição. Alimente com botão direito: a cura usa a saturação do componente alimentar, sem efeitos especiais ou recarga do escudo. Em defesa, entra com HP até 50%, recua em Seguir/Combate, come no máximo a cada cinco segundos e só retorna à ofensiva aos 65%. Ficar e Passivo mantêm suas restrições.
+
+Leia [compatibilidade, persistência e testes](FASE_6_9_SOBREVIVENCIA.md).

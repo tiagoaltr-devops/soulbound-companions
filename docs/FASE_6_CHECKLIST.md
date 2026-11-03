@@ -1,5 +1,34 @@
 # Fase 6 — Checklist de homologação
 
+## Complemento 6.6 — HUD de vida e experiência
+
+Painel de status, snapshots autoritativos e estados especiais implementados.
+Build: 566 verificações aprovadas. [Roteiro visual pendente](FASE_6_6_HUD.md).
+
+## Atualização 6.5
+
+Progressão, 14 talentos Lupus, especializações e Redistribuição implementados.
+Build com 506 verificações e 45 checagens nativas no servidor isolado aprovados.
+[Detalhes e homologação manual pendente](FASE_6_5_PROGRESSAO.md).
+
+## Complemento 6.4.1 — Ressurreição
+
+DEAD confirmado no SavedData do mundo New World (2). Recuperação em Baby preserva
+Junior e progressão; 32 testes nativos de combate/vida/recuperação aprovados.
+[Diagnóstico e roteiro manual](FASE_6_4_1_RESSURREICAO.md).
+
+## Atualização 6.4.1
+
+Combate e ultimate verificados em servidor isolado: 18 verificações nativas.
+Modo Seguir/Combate explícito, atalho no menu, autorização sem Bastão na mão e
+HUD/erros específicos. [Resultados e homologação visual pendente](FASE_6_4_1_COMBATE.md).
+
+## Atualização 6.4
+
+Formas Baby/Junior, infusão, Núcleo Junior, modelo humanoide, combate e Ruptura
+Ancestral implementados. Build: 390 verificações aprovadas. Homologação manual
+pendente no [roteiro da Fase 6.4](FASE_6_4_JUNIOR.md).
+
 ## Atualização 6.3.1
 
 Ativação de 15 segundos, HUD contextual, apresentação das oferendas e efeitos

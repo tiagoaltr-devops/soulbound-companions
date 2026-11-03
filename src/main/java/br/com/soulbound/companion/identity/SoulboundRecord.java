@@ -13,8 +13,9 @@ import net.minecraft.world.phys.Vec3;
 public record SoulboundRecord(UUID ownerUuid, String ownerLastKnownName, UUID bondUuid, UUID companionUuid,
         String species, String evolutionStage, String behaviorMode, CompanionStatus companionStatus,
         boolean resurrectionRequired, double evolutionProgress, long godCooldownEnd,
-        boolean eggDelivered, boolean eggDeliveryPending, SoulRecallState recall) {
-    public static final Codec<SoulboundRecord> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+        boolean eggDelivered, boolean eggDeliveryPending, SoulRecallState recall, br.com.soulbound.companion.CompanionForms forms,
+        br.com.soulbound.companion.progression.ProgressionState progression,br.com.soulbound.companion.SurvivalState survival) {
+    private static final com.mojang.serialization.MapCodec<SoulboundRecord> BASE_CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
             UUIDUtil.CODEC.fieldOf("ownerUuid").forGetter(SoulboundRecord::ownerUuid),
             Codec.STRING.fieldOf("ownerLastKnownName").forGetter(SoulboundRecord::ownerLastKnownName),
             UUIDUtil.CODEC.fieldOf("bondUuid").forGetter(SoulboundRecord::bondUuid),
@@ -28,9 +29,28 @@ public record SoulboundRecord(UUID ownerUuid, String ownerLastKnownName, UUID bo
             Codec.LONG.fieldOf("godCooldownEnd").forGetter(SoulboundRecord::godCooldownEnd),
             Codec.BOOL.optionalFieldOf("eggDelivered", false).forGetter(SoulboundRecord::eggDelivered),
             Codec.BOOL.optionalFieldOf("eggDeliveryPending", true).forGetter(SoulboundRecord::eggDeliveryPending),
-            SoulRecallState.MAP_CODEC.forGetter(SoulboundRecord::recall)
+            SoulRecallState.MAP_CODEC.forGetter(SoulboundRecord::recall),
+            br.com.soulbound.companion.CompanionForms.CODEC.optionalFieldOf("forms",br.com.soulbound.companion.CompanionForms.LEGACY).forGetter(SoulboundRecord::forms),
+            br.com.soulbound.companion.progression.ProgressionState.CODEC.optionalFieldOf("progression",br.com.soulbound.companion.progression.ProgressionState.INITIAL).forGetter(SoulboundRecord::progression)
     ).apply(instance, SoulboundRecord::new));
 
+    public static final Codec<SoulboundRecord> CODEC=Codec.mapPair(BASE_CODEC,br.com.soulbound.companion.SurvivalState.CODEC.optionalFieldOf("survival",br.com.soulbound.companion.SurvivalState.EMPTY)).xmap(pair->pair.getFirst().withSurvival(pair.getSecond()),r->com.mojang.datafixers.util.Pair.of(r,r.survival())).codec();
+    public SoulboundRecord(UUID owner,String name,UUID bond,UUID entity,String species,String stage,String mode,CompanionStatus status,boolean resurrection,double progress,long godCooldown,boolean delivered,boolean pending,SoulRecallState recall,br.com.soulbound.companion.CompanionForms forms,br.com.soulbound.companion.progression.ProgressionState progression){this(owner,name,bond,entity,species,stage,mode,status,resurrection,progress,godCooldown,delivered,pending,recall,forms,progression,br.com.soulbound.companion.SurvivalState.EMPTY);}
+    public SoulboundRecord withSurvival(br.com.soulbound.companion.SurvivalState state){return new SoulboundRecord(ownerUuid,ownerLastKnownName,bondUuid,companionUuid,species,evolutionStage,behaviorMode,companionStatus,resurrectionRequired,evolutionProgress,godCooldownEnd,eggDelivered,eggDeliveryPending,recall,forms,progression,state);}
+    public SoulboundRecord {if(forms.unlockedForms().isEmpty())forms=br.com.soulbound.companion.CompanionForms.migrate(evolutionStage);}
+    public String archetypeId(){return forms.archetypeId();}
+    public java.util.Set<String> unlockedForms(){return forms.unlockedForms();}
+    public String activeForm(){return forms.activeForm();}
+    public SoulboundRecord withProgression(br.com.soulbound.companion.progression.ProgressionState value){return new SoulboundRecord(ownerUuid,ownerLastKnownName,bondUuid,companionUuid,species,evolutionStage,behaviorMode,companionStatus,resurrectionRequired,evolutionProgress,godCooldownEnd,eggDelivered,eggDeliveryPending,recall,forms,value,survival);}
+    public SoulboundRecord withForms(br.com.soulbound.companion.CompanionForms value){return new SoulboundRecord(ownerUuid,ownerLastKnownName,bondUuid,companionUuid,species,evolutionStage,behaviorMode,companionStatus,resurrectionRequired,evolutionProgress,godCooldownEnd,eggDelivered,eggDeliveryPending,recall,value,progression,survival);}
+    public SoulboundRecord unlockJunior(){return new SoulboundRecord(ownerUuid,ownerLastKnownName,bondUuid,companionUuid,species,"JUNIOR",behaviorMode,companionStatus,resurrectionRequired,evolutionProgress,godCooldownEnd,eggDelivered,eggDeliveryPending,recall,forms.unlockJunior(),progression,survival);}
+    public SoulboundRecord unlockPleno(){return new SoulboundRecord(ownerUuid,ownerLastKnownName,bondUuid,companionUuid,species,"PLENO",behaviorMode,companionStatus,resurrectionRequired,evolutionProgress,godCooldownEnd,eggDelivered,eggDeliveryPending,recall,forms.unlockPleno(),progression,survival);}
+    public SoulboundRecord(UUID ownerUuid,String ownerLastKnownName,UUID bondUuid,UUID companionUuid,String species,String evolutionStage,String behaviorMode,CompanionStatus companionStatus,boolean resurrectionRequired,double evolutionProgress,long godCooldownEnd,boolean eggDelivered,boolean eggDeliveryPending,SoulRecallState recall,br.com.soulbound.companion.CompanionForms forms){
+        this(ownerUuid,ownerLastKnownName,bondUuid,companionUuid,species,evolutionStage,behaviorMode,companionStatus,resurrectionRequired,evolutionProgress,godCooldownEnd,eggDelivered,eggDeliveryPending,recall,forms,br.com.soulbound.companion.progression.ProgressionState.INITIAL);
+    }
+    public SoulboundRecord(UUID ownerUuid,String ownerLastKnownName,UUID bondUuid,UUID companionUuid,String species,String evolutionStage,String behaviorMode,CompanionStatus companionStatus,boolean resurrectionRequired,double evolutionProgress,long godCooldownEnd,boolean eggDelivered,boolean eggDeliveryPending,SoulRecallState recall){
+        this(ownerUuid,ownerLastKnownName,bondUuid,companionUuid,species,evolutionStage,behaviorMode,companionStatus,resurrectionRequired,evolutionProgress,godCooldownEnd,eggDelivered,eggDeliveryPending,recall,br.com.soulbound.companion.CompanionForms.migrate(evolutionStage));
+    }
     public SoulboundRecord(UUID ownerUuid, String ownerLastKnownName, UUID bondUuid, UUID companionUuid,
             String species, String evolutionStage, String behaviorMode, CompanionStatus companionStatus,
             boolean resurrectionRequired, double evolutionProgress, long godCooldownEnd, boolean eggDelivered, boolean eggDeliveryPending) {
@@ -45,7 +65,7 @@ public record SoulboundRecord(UUID ownerUuid, String ownerLastKnownName, UUID bo
 
     public SoulboundRecord withRecall(SoulRecallState state) {
         return new SoulboundRecord(ownerUuid, ownerLastKnownName, bondUuid, companionUuid, species, evolutionStage,
-                behaviorMode, companionStatus, resurrectionRequired, evolutionProgress, godCooldownEnd, eggDelivered, eggDeliveryPending, state);
+                behaviorMode, companionStatus, resurrectionRequired, evolutionProgress, godCooldownEnd, eggDelivered, eggDeliveryPending, state,forms,progression,survival);
     }
 
     public static SoulboundRecord create(UUID owner, String name) {
@@ -55,22 +75,23 @@ public record SoulboundRecord(UUID ownerUuid, String ownerLastKnownName, UUID bo
 
     public SoulboundRecord withName(String name) {
         return new SoulboundRecord(ownerUuid, name, bondUuid, companionUuid, species, evolutionStage, behaviorMode,
-                companionStatus, resurrectionRequired, evolutionProgress, godCooldownEnd, eggDelivered, eggDeliveryPending, recall);
+                companionStatus, resurrectionRequired, evolutionProgress, godCooldownEnd, eggDelivered, eggDeliveryPending, recall,forms,progression,survival);
     }
 
     public SoulboundRecord withDelivery(boolean delivered, boolean pending) {
         return new SoulboundRecord(ownerUuid, ownerLastKnownName, bondUuid, companionUuid, species, evolutionStage,
-                behaviorMode, companionStatus, resurrectionRequired, evolutionProgress, godCooldownEnd, delivered, pending, recall);
+                behaviorMode, companionStatus, resurrectionRequired, evolutionProgress, godCooldownEnd, delivered, pending, recall,forms,progression,survival);
     }
 
     public SoulboundRecord withState(CompanionStatus status, boolean resurrection, String mode) {
         return new SoulboundRecord(ownerUuid, ownerLastKnownName, bondUuid, companionUuid, species, evolutionStage,
-                mode, status, resurrection, evolutionProgress, godCooldownEnd, eggDelivered, eggDeliveryPending, recall);
+                mode, status, resurrection, evolutionProgress, godCooldownEnd, eggDelivered, eggDeliveryPending, recall,
+                (status==CompanionStatus.DEAD || status==CompanionStatus.MISSING)?forms.endGod():forms,progression,survival);
     }
 
     public SoulboundRecord adoptLegacy(UUID entityUuid, String stage, String mode) {
         return new SoulboundRecord(ownerUuid, ownerLastKnownName, bondUuid, entityUuid, species, stage, mode,
-                CompanionStatus.ACTIVE, false, evolutionProgress, godCooldownEnd, eggDelivered, eggDeliveryPending, recall);
+                CompanionStatus.ACTIVE, false, evolutionProgress, godCooldownEnd, eggDelivered, eggDeliveryPending, recall,br.com.soulbound.companion.CompanionForms.migrate(stage),progression,survival);
     }
 
     public boolean matches(UUID owner, UUID bond, UUID companion) {
@@ -79,10 +100,16 @@ public record SoulboundRecord(UUID ownerUuid, String ownerLastKnownName, UUID bo
 
     public boolean canSummon() {
         return companionStatus == CompanionStatus.READY && !resurrectionRequired
-                && species.equals("LUPUS") && evolutionStage.equals("BABY");
+                && species.equals("LUPUS") && activeForm().equals("BABY");
+    }
+    public boolean canResurrect(){return companionStatus==CompanionStatus.DEAD && resurrectionRequired;}
+    public SoulboundRecord recoverAfterDeath(){
+        if(!canResurrect())throw new IllegalStateException("Only DEAD permits resurrection");
+        var baby=forms.recoverBaby();
+        return withState(CompanionStatus.READY,false,"FOLLOW_PASSIVE").withForms(baby);
     }
     public SoulboundRecord withEvolution(String stage,double progress,long godCooldown) {
         return new SoulboundRecord(ownerUuid,ownerLastKnownName,bondUuid,companionUuid,species,stage,behaviorMode,
-                companionStatus,resurrectionRequired,progress,godCooldown,eggDelivered,eggDeliveryPending,recall);
+                companionStatus,resurrectionRequired,progress,godCooldown,eggDelivered,eggDeliveryPending,recall,stage.equals(evolutionStage)?forms:br.com.soulbound.companion.CompanionForms.migrate(stage),progression,survival);
     }
 }

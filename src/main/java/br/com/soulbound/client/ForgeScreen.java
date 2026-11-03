@@ -8,12 +8,14 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
 
 public final class ForgeScreen extends AbstractContainerScreen<ForgeMenu> {
-    private Button activate,core,ritual;
+    private Button activate,core,ritual,reset;
     public ForgeScreen(ForgeMenu menu,Inventory inv,Component title){super(menu,inv,title);imageWidth=310;imageHeight=300;}
     @Override protected void init(){
         super.init();
         activate=addRenderableWidget(Button.builder(Component.translatable("menu.soulbound.forge_activate"),b->send(0)).bounds(leftPos+12,topPos+185,286,20).build());
-        core=addRenderableWidget(Button.builder(Component.translatable("menu.soulbound.core_exchange"),b->send(1)).bounds(leftPos+12,topPos+210,286,20).build());
+        core=addRenderableWidget(Button.builder(Component.translatable("menu.soulbound.core_short"),b->send(1)).bounds(leftPos+12,topPos+210,140,20).build());
+        reset=addRenderableWidget(Button.builder(Component.translatable("menu.soulbound.talent_reset"),b->send(3)).bounds(leftPos+158,topPos+210,140,20).build());
+        reset.setTooltip(net.minecraft.client.gui.components.Tooltip.create(Component.translatable("menu.soulbound.talent_reset_cost")));
         ritual=addRenderableWidget(Button.builder(Component.translatable("menu.soulbound.ritual_confirm"),b->send(2)).bounds(leftPos+12,topPos+235,286,20).build());
         addRenderableWidget(Button.builder(Component.translatable("gui.done"),b->onClose()).bounds(leftPos+100,topPos+267,110,20).build());
         updateButtons();
@@ -22,6 +24,12 @@ public final class ForgeScreen extends AbstractContainerScreen<ForgeMenu> {
         int state=menu.info.get(0);activate.visible=state==0 || state==1;activate.active=activate.visible;
         activate.setMessage(Component.translatable(state==1?"menu.soulbound.forge_reactivate":"menu.soulbound.forge_activate"));
         core.visible=state==2;core.active=core.visible;ritual.visible=state==2;ritual.active=ritual.visible;
+        reset.visible=state==2;reset.active=reset.visible && menu.info.get(11)==0;
+        ritual.setMessage(Component.translatable(menu.info.get(9)==1?"menu.soulbound.junior_ritual":"menu.soulbound.ritual_confirm"));
+        if(menu.info.get(13)==1)ritual.setMessage(Component.translatable("menu.soulbound.god_ritual"));
+        if(menu.info.get(12)==1)ritual.setMessage(Component.translatable("menu.soulbound.pleno_ritual"));
+        if(menu.info.get(10)==1)ritual.setMessage(Component.translatable("menu.soulbound.resurrect"));
+        if(menu.info.get(11)>0){core.active=false;ritual.active=false;ritual.setMessage(Component.translatable("menu.soulbound.ritual_remaining",menu.info.get(11)));}
     }
     @Override protected void containerTick(){super.containerTick();updateButtons();}
     private void send(int id){if(minecraft!=null && minecraft.gameMode!=null)minecraft.gameMode.handleInventoryButtonClick(menu.containerId,id);}
@@ -46,6 +54,9 @@ public final class ForgeScreen extends AbstractContainerScreen<ForgeMenu> {
         }
         g.drawString(font,menu.coreName,12,82,0xffa7e8ff,false);
         offerings(g);
+        if(menu.info.get(9)==1)g.drawString(font,Component.translatable(menu.info.get(8)==1?"menu.soulbound.junior_ready":"menu.soulbound.junior_requires"),12,153,0xffa7e8ff,false);
+        if(menu.info.get(13)==1)g.drawString(font,Component.translatable("menu.soulbound.god_requires"),12,153,0xffa7e8ff,false);
+        if(menu.info.get(12)==1)g.drawString(font,Component.translatable("menu.soulbound.pleno_requires"),12,153,0xffa7e8ff,false);
         g.drawString(font,Component.translatable("menu.soulbound.ritual_cost",menu.info.get(5),menu.info.get(6)),12,169,0xffffcc80,false);
     }
     private void offerings(GuiGraphics g){

@@ -25,11 +25,12 @@ public final class AltarTokens {
         if (!token.kind.equals("spark")) stack.set(DataComponents.ITEM_NAME,Component.translatable("item.soulbound.charged_core."+token.kind));
         stack.set(DataComponents.LORE,new net.minecraft.world.item.component.ItemLore(java.util.List.of(
                 Component.translatable("tooltip.soulbound.altar_token",token.id),
-                Component.translatable(token.kind.equals("spark")?"tooltip.soulbound.spark":"tooltip.soulbound.core_tradeable"))));
+                Component.translatable(token.kind.equals("spark")?"tooltip.soulbound.spark":token.kind.equals("divine")?"tooltip.soulbound.god_bound":token.kind.equals("ascension")?"tooltip.soulbound.pleno_bound":token.kind.equals("awakening")?"tooltip.soulbound.junior_bound":"tooltip.soulbound.core_tradeable"))));
         return stack;
     }
     public static void deliver(ServerPlayer player, AltarSavedData data) {
         for (var token:data.state.tokens.values()) {
+            if(token.owner.equals(player.getStringUUID()) && token.xpRewardKey!=null){br.com.soulbound.companion.progression.ProgressionService.reward(player.level().getServer(),player.getUUID(),token.xpRewardKey,100,false);token.xpRewardKey=null;data.setDirty();}
             if (!token.owner.equals(player.getStringUUID()) || token.delivered || token.spent) continue;
             if(InventoryTransfers.received(player,token.id)){
                 token.delivered=true;data.flush(player.level().getServer());continue;

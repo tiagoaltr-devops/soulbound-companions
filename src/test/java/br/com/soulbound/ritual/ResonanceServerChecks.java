@@ -30,6 +30,7 @@ public final class ResonanceServerChecks {
     private static double farthest;
     private static void require(boolean condition,String text){if(!condition)throw new AssertionError(text);checks++;}
     @SubscribeEvent public static void start(ServerStartedEvent e){
+        if(Boolean.getBoolean("soulbound.combatChecks") || Boolean.getBoolean("soulbound.survivalChecks"))return;
         var s=e.getServer();
         if(!s.getWorldPath(net.minecraft.world.level.storage.LevelResource.ROOT).toAbsolutePath().toString().contains("phase611-server"))throw new IllegalStateException("Live checks require isolated phase611-server directory");
         var level=s.overworld();

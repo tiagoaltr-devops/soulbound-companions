@@ -115,8 +115,16 @@ public final class AncestralResonanceChecks {
         require(AltarPolicy.trialCoolingDown(200,100,36000),"Positive trial cooldown can be reenabled");
         require(!AltarPolicy.trialCoolingDown(100,100,36000),"Expired positive cooldown permits retry");
         require(RuinSelection.distanceSquared(new BlockPos(2000,0,0),BlockPos.ZERO)==4000000,"Spawn barrier boundary");
-        System.out.println("Ancestral resonance checks passed: "+checks+"; synthetic village candidates selected="+selected+"/3721");
-        System.out.println("Phase 6.1.2 frequency comparison: "+selected+" -> "+denser.size()+" / 3721 candidates (one seed, no chunks generated)");
+        int coinCount=0,different=0;
+        for(int x=-50;x<50;x++)for(int z=-50;z<50;z++){
+            boolean coin=RuinSelection.villageSelected(seed,x*34,z*34);if(coin)coinCount++;
+            if(coin!=RuinSelection.villageSelected(seed+1,x*34,z*34))different++;
+            if(coin!=RuinSelection.villageSelected(seed,x*34,z*34))throw new AssertionError("Village coin must remain deterministic");
+        }
+        require(coinCount>4700 && coinCount<5300,"Independent village selection approximates 50% over 10000 sites");
+        require(different>4000 && different<6000,"World seed changes independent village outcomes");
+        System.out.println("Ancestral resonance checks passed: "+checks+"; 50% village selection="+coinCount+"/10000 (synthetic, no chunks generated)");
+        System.out.println("Legacy distribution regression only: "+selected+" -> "+denser.size()+" / 3721; no longer used by worldgen");
     }
     private static AltarSavedData.Ruin ruin(String id,int x,String dimension){var r=new AltarSavedData.Ruin();r.id=id;r.dimension=dimension;r.x=x;r.origin="NATURAL_WORLDGEN";r.integrity="INTACT";return r;}
     private static CompoundTag physical(BlockPos pos,String id,boolean stamped){

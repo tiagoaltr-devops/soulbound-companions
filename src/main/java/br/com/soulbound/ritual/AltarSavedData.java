@@ -56,6 +56,9 @@ public final class AltarSavedData extends SavedData {
     }
     public static final class Token {
         public String id, kind, owner;
+        public String bond;
+        public boolean recoveryOnly;
+        public String xpRewardKey;
         public boolean spent, delivered;
         public String applicationOwner,applicationBond;
         public boolean applicationPending;
@@ -92,7 +95,7 @@ public final class AltarSavedData extends SavedData {
                     || !Set.of("ACTIVE","INACTIVE","DESTROYED").contains(a.result) || f.owner==null && !"ACTIVE".equals(a.result))throw new IllegalArgumentException("Invalid activation escrow");
             UUID.fromString(a.player);
         }});
-        d.state.tokens.forEach((id,t) -> { if (!id.equals(t.id) || t.owner==null || !Set.of("spark","awakening","ascension","divine","restoration").contains(t.kind)) throw new IllegalArgumentException("Invalid token"); });
+        d.state.tokens.forEach((id,t) -> { if (!id.equals(t.id) || t.owner==null || !Set.of("spark","awakening","ascension","divine","restoration","talent_reset").contains(t.kind)) throw new IllegalArgumentException("Invalid token"); });
         d.state.rituals.forEach((id,r)->{if(!id.equals(r.id) || r.offerings==null || !d.state.forges.containsKey(r.forge))throw new IllegalArgumentException("Invalid ritual escrow");});
         d.state.transfers.forEach((id,t)->{if(!id.equals(t.id) || t.player==null || t.target==null || t.stack==null)throw new IllegalArgumentException("Invalid inventory transfer");});
         return d;

@@ -22,6 +22,7 @@ public final class ThreatRecoilGoal extends Goal {
 
     @Override
     public boolean canUse() {
+        if(!companion.isBaby())return false;
         long alert = companion.getThreatAlertEnd();
         if (alert == lastAlert || alert <= companion.level().getGameTime()) return false;
         lastAlert = alert;

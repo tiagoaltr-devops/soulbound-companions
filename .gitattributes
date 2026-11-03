@@ -1,5 +1,21 @@
-# Disable autocrlf on generated files, they always generate with LF
-# Add any extra files or paths here to make git stop saying they
-# are changed when only line endings change.
-src/generated/**/.cache/* text eol=lf
-src/generated/**/*.json text eol=lf
+# Portable text in Git; Gradle's Unix launcher must always use LF.
+* text=auto
+.gitattributes text eol=lf
+.gitignore text eol=lf
+gradlew text eol=lf
+*.java text eol=lf
+*.gradle text eol=lf
+*.properties text eol=lf
+*.json text eol=lf
+*.md text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.toml text eol=lf
+*.bbmodel text eol=lf
+*.bat text eol=crlf
+*.ps1 text eol=crlf
+
+# Do not normalize binary assets or the Gradle wrapper archive.
+*.png binary
+*.jar binary
+*.zip binary

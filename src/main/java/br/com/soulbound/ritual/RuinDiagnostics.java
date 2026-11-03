@@ -15,6 +15,7 @@ import net.neoforged.neoforge.event.RegisterCommandsEvent;
 public final class RuinDiagnostics {
     private RuinDiagnostics() {}
     @SubscribeEvent public static void commands(RegisterCommandsEvent e){
+        if(net.neoforged.fml.loading.FMLEnvironment.isProduction())return;
         var root=Commands.literal("soulbound").then(Commands.literal("altar")
             .then(Commands.literal("ruin_village_probe").requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
                 .then(Commands.argument("x",IntegerArgumentType.integer(-29000000,29000000)).then(Commands.argument("z",IntegerArgumentType.integer(-29000000,29000000)).executes(c->{

@@ -24,6 +24,8 @@ public class SoulboundCompanions {
         br.com.soulbound.registry.ModAltar.register(modEventBus);
         modEventBus.addListener(ModEntities::registerAttributes);
         modEventBus.addListener(this::addCreative);
+        modEventBus.addListener(br.com.soulbound.network.JuniorUltimatePayload::register);
+        modEventBus.addListener(br.com.soulbound.network.CompanionHudPayload::register);
     }
 
     private void addCreative(BuildCreativeModeTabContentsEvent event) {

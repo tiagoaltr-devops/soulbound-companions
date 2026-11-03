@@ -23,12 +23,13 @@ public final class BabyFleeThreatGoal extends Goal {
 
     @Override
     public boolean canUse() {
+        if(!companion.isBaby())return false;
         danger = companion.getThreatSensor().nearestDanger(4.0);
         return danger != null;
     }
 
     @Override
-    public boolean canContinueToUse() { return safeTicks < 40; }
+    public boolean canContinueToUse() { return companion.isBaby() && safeTicks < 40; }
 
     @Override
     public boolean requiresUpdateEveryTick() { return true; }

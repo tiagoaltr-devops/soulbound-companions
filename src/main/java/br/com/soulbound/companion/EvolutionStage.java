@@ -1,5 +1,5 @@
 package br.com.soulbound.companion;
 
 public enum EvolutionStage {
-    BABY, JUNIOR, PLENO
+    BABY, JUNIOR, PLENO, GOD
 }
