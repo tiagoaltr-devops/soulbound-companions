@@ -18,6 +18,10 @@ public class SoulboundCompanionsClient {
         modEventBus.addListener(this::registerLayers);
         modEventBus.addListener(this::registerScreens);
         modEventBus.addListener(br.com.soulbound.client.JuniorControls::register);
+        modEventBus.addListener(br.com.soulbound.client.TargetControls::register);
+        modEventBus.addListener(br.com.soulbound.client.TargetControls::payloads);
+        modEventBus.addListener(br.com.soulbound.client.TargetControls::layer);
+        net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(br.com.soulbound.client.TargetControls::tick);
         modEventBus.addListener(br.com.soulbound.client.CompanionStatusHud::registerLayer);
         modEventBus.addListener(br.com.soulbound.client.CompanionStatusHud::registerPayload);
         net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(br.com.soulbound.client.CompanionStatusHud::logout);
@@ -27,7 +31,7 @@ public class SoulboundCompanionsClient {
     }
 
     private void registerScreens(RegisterMenuScreensEvent event) {
-        event.register(ModMenus.SOUL_COMMAND.get(), SoulCommandScreen::new);
+        event.register(ModMenus.SOUL_COMMAND.get(), br.com.soulbound.client.GrimoireScreen::new);
         event.register(ModMenus.COMPANION_INVENTORY.get(),br.com.soulbound.client.CompanionInventoryScreen::new);
         event.register(ModMenus.TALENTS.get(),br.com.soulbound.client.TalentScreen::new);
         event.register(ModMenus.ANCESTRAL_TRIAL.get(), br.com.soulbound.client.TrialScreen::new);

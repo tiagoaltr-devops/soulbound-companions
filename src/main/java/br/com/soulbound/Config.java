@@ -43,7 +43,10 @@ public final class Config {
     public static final ModConfigSpec.IntValue JUNIOR_ATTACK_INTERVAL=BUILDER.defineInRange("juniorAttackIntervalTicks",20,5,200);
     public static final ModConfigSpec.DoubleValue JUNIOR_ULTIMATE_DAMAGE=BUILDER.defineInRange("juniorUltimateDamage",8.0,0,100);
     public static final ModConfigSpec.IntValue TALENT_MINERAL_INCREMENT=BUILDER.defineInRange("talentMineralRadiusPerRank",2,0,6);
-    public static final ModConfigSpec SPEC = BUILDER.build();
 
+
+    public static final ModConfigSpec.IntValue TARGET_RANGE = BUILDER.defineInRange("targetCommandRange",24,4,48);
+    public static final ModConfigSpec.IntValue TARGET_TIMEOUT=BUILDER.defineInRange("targetCommandTimeoutTicks",600,40,2400);
+    public static final ModConfigSpec SPEC=BUILDER.build();
     private Config() {}
 }

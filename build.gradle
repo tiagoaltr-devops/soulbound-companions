@@ -268,7 +268,9 @@ def releaseJarChecks = tasks.register('releaseJarChecks') {
              'assets/soulbound/textures/entity/lupus_baby.png', 'assets/soulbound/textures/entity/lupus_junior.png',
              'assets/soulbound/textures/entity/lupus_pleno.png', 'assets/soulbound/textures/entity/lupus_god_prime.png',
              'assets/soulbound/textures/entity/lupus_junior_irushia.png', 'assets/soulbound/credits/irushia.txt',
-             'assets/soulbound/textures/entity/lupus_pleno_brambleback.png', 'assets/soulbound/credits/brambleback.txt'].each {
+             'assets/soulbound/textures/entity/lupus_pleno_brambleback.png', 'assets/soulbound/credits/brambleback.txt',
+             'assets/soulbound/items/soul_grimoire.json', 'assets/soulbound/textures/item/soul_grimoire.png',
+             'assets/soulbound/textures/gui/grimoire/content_panel.png', 'assets/soulbound/textures/gui/grimoire/target_reticle.png'].each {
                 if (!names.contains(it)) throw new GradleException("Missing release resource: ${it}")
             }
             logger.lifecycle('Release JAR verified: metadata, textures, translations and development exclusions')

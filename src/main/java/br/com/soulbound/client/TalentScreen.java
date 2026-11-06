@@ -17,7 +17,7 @@ public final class TalentScreen extends AbstractContainerScreen<TalentMenu> {
         for(int i=0;i<5;i++){final int branch=i;tabs[i]=addRenderableWidget(Button.builder(Component.translatable(i==0?"menu.soulbound.main_short":"menu.soulbound.branch."+i),b->selectBranch(branch)).bounds(leftPos+10+i*61,topPos+29,57,18).build());}
         invest=addRenderableWidget(Button.builder(Component.translatable("menu.soulbound.invest"),b->{if(minecraft!=null && minecraft.gameMode!=null)minecraft.gameMode.handleInventoryButtonClick(menu.containerId,selected);}).bounds(leftPos+10,topPos+170,300,20).build());
         addRenderableWidget(Button.builder(Component.literal("<"),b->move(-1)).bounds(leftPos+10,topPos+196,70,18).build());
-        addRenderableWidget(Button.builder(Component.translatable("gui.done"),b->onClose()).bounds(leftPos+118,topPos+196,84,18).build());
+        addRenderableWidget(Button.builder(Component.translatable("grimoire.soulbound.back"),b->net.neoforged.neoforge.client.network.ClientPacketDistributor.sendToServer(new br.com.soulbound.network.GrimoireOpenPayload(menu.containerId))).bounds(leftPos+118,topPos+196,84,18).build());
         addRenderableWidget(Button.builder(Component.literal(">"),b->move(1)).bounds(leftPos+240,topPos+196,70,18).build());update();
     }
     private void selectBranch(int index){for(int i=0;i<TalentDefinitions.ALL.size();i++)if(TalentDefinitions.ALL.get(i).branch().ordinal()==index){selected=i;break;}update();}

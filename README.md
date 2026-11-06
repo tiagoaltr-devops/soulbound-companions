@@ -43,7 +43,7 @@ O workflow em `.github/workflows/build.yml` executa o build com Java 21 no GitHu
 ## Funcionalidades atuais
 
 - Identidade canônica persistente, propriedade por UUID e reserva de entidade única.
-- Ovo/Bastão da Alma, comandos, recuperação do item e Soul Recall.
+- Ovo/Grimório da Alma, comandos, recuperação do item e Soul Recall.
 - Baby flutuante, alertas de ameaças, fuga, detecção de minérios e ressonância ancestral.
 - Formas Junior e Pleno, progressão de nível, talentos e combate.
 - God temporário, escudo espiritual e habilidades próprias.
@@ -65,6 +65,8 @@ externos ainda exigem inspeção visual no Minecraft e testes com clientes reais
 | [AGENTS.md](AGENTS.md) | Convenções de desenvolvimento e arquitetura |
 | [Soulbound Identity](docs/SOULBOUND_IDENTITY.md) | Autoridade, UUIDs, persistência e limites |
 | [Fase 6 e checklist](docs/FASE_6_IMPLEMENTACAO.md) / [checklist](docs/FASE_6_CHECKLIST.md) | Altares, rituais e testes |
+| [Grimório e ataque direcionado](docs/FASE_6_10_4_GRIMORIO.md) | Hub, migração e foco temporário |
+| [Inventário e talentos integrados](docs/FASE_6_10_4_1_INTEGRACAO.md) | Slots e árvore diretamente nas abas do Grimório |
 | [Sobrevivência](docs/FASE_6_9_SOBREVIVENCIA.md) | Equipamentos, HP, alimentação e IA |
 | [Pré-release](docs/FASE_6_10_PRE_RELEASE.md) | Revisão, empacotamento e homologação |
 | [Junior Irushia](docs/JUNIOR_IRUSHIA.md) / [Pleno Brambleback](docs/PLENO_BRAMBLEBACK.md) | Modelos atuais, créditos e testes visuais |

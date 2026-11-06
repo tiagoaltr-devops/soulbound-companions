@@ -6,9 +6,9 @@ import net.minecraft.resources.Identifier;
 /** Cosmetic projection only. Neither this enum nor ITEM_MODEL grants command authority. */
 public enum SoulItemForm {
     EGG("companion_egg", "item.soulbound.companion_egg"),
-    STAFF("soul_staff", "item.soulbound.soul_staff"),
+    STAFF("soul_grimoire", "item.soulbound.soul_grimoire"),
     SHATTERED_EGG("shattered_egg", "item.soulbound.shattered_egg"),
-    INACTIVE_STAFF("inactive_staff", "item.soulbound.inactive_staff");
+    INACTIVE_STAFF("soul_grimoire", "item.soulbound.inactive_grimoire");
 
     private final Identifier model;
     private final String nameKey;

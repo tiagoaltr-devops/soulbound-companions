@@ -17,14 +17,19 @@ public final class JuniorCombat {
     public static boolean enabled(String form,BehaviorMode mode,boolean busy){return CompanionArchetype.form(form).combat().offensive() && mode==BehaviorMode.FOLLOW_COMBAT && !busy;}
     public static boolean targetAllowed(boolean hostile,boolean player,boolean ally,boolean protectedMob,boolean alive,boolean invulnerable){return hostile && !player && !ally && !protectedMob && alive && !invulnerable;}
     public static boolean target(LupusCompanionEntity c,LivingEntity target){
+        if(br.com.soulbound.companion.target.TargetCommandService.authorized(c,target))return true;
         return targetAllowed(target instanceof Mob && target instanceof Enemy,target instanceof Player,
             c.isAlliedTo(target) || c.getOwnerPlayer()!=null && c.getOwnerPlayer().isAlliedTo(target),
             target instanceof LupusCompanionEntity || target instanceof br.com.soulbound.entity.SpiritGuardianEntity
                 || target instanceof net.minecraft.world.entity.TamableAnimal tame && tame.isTame(),target.isAlive(),target.isInvulnerable());
     }
     public static boolean hit(LupusCompanionEntity c,LivingEntity target,float damage){
-        if(!(c.level() instanceof ServerLevel level) || !c.canFight() || !target(c,target))return false;
-        var weapon=c.getMainHandItem();var source=weapon.getDamageSource(c,()->c.damageSources().mobAttack(c));
+        if(!(c.level() instanceof ServerLevel level) || !c.canFight() || !target(c,target) || !c.hasLineOfSight(target))return false;
+        var owner=c.getOwnerPlayer();boolean explicit=br.com.soulbound.companion.target.TargetCommandService.authorized(c,target);
+        if(explicit && owner!=null && net.neoforged.neoforge.common.NeoForge.EVENT_BUS.post(new net.neoforged.neoforge.event.entity.player.AttackEntityEvent(owner,target)).isCanceled())return false;
+        var weapon=c.getMainHandItem();var nativeSource=weapon.getDamageSource(c,()->c.damageSources().mobAttack(c));
+        // Keep the actual weapon/direct attacker, expose the issuing player to native PvP and claim hooks.
+        var source=explicit && owner!=null?new net.minecraft.world.damagesource.DamageSource(nativeSource.typeHolder(),c,owner):nativeSource;
         damage=net.minecraft.world.item.enchantment.EnchantmentHelper.modifyDamage(level,weapon,target,source,damage);
         damage+=weapon.getItem().getAttackDamageBonus(target,damage,source);
         float before=target.getHealth()+target.getAbsorptionAmount();var velocity=target.getDeltaMovement();boolean hit=target.hurtServer(level,source,damage);

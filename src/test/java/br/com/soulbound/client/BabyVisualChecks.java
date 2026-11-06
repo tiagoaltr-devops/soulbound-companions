@@ -59,6 +59,7 @@ public final class BabyVisualChecks {
         WarriorVisualChecks.run();
         IrushiaJuniorChecks.run();
         BramblebackPlenoChecks.run();
+        GrimoireChecks.run();
         GodVisualChecks.run();
     }
 

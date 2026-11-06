@@ -8,6 +8,7 @@ import org.lwjgl.glfw.GLFW;
 public final class JuniorControls {
     private static final KeyMapping.Category CATEGORY=new KeyMapping.Category(Identifier.fromNamespaceAndPath("soulbound","companions"));
     private static final KeyMapping ULTIMATE=new KeyMapping("key.soulbound.ultimate",GLFW.GLFW_KEY_R,CATEGORY);
+    public static boolean conflicts(KeyMapping key){return ULTIMATE.getKey().equals(key.getKey());}
     public static net.minecraft.network.chat.Component shortcut(){return ULTIMATE.getTranslatedKeyMessage();}
     public static boolean fromMenu(net.minecraft.client.input.KeyEvent event){
         if(!ULTIMATE.matches(event))return false;

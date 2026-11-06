@@ -16,14 +16,18 @@ import net.minecraft.world.item.ItemStack;
 import org.jspecify.annotations.Nullable;
 
 /** Slotless vanilla menu. Clients send only container/button IDs, never an owner or target entity UUID. */
-public final class SoulCommandMenu extends AbstractContainerMenu {
+public final class SoulCommandMenu extends CompanionInventoryMenu {
     public static final int FOLLOW = 0;
     public static final int STAY = 1;
     public static final int RECALL = 2;
     public static final int GOD = 3;
     public static final int LOCATE_RUIN = 4;
-    public static final int PASSIVE=5,BABY_FORM=6,JUNIOR_FORM=7,TALENTS=8,PLENO_FORM=9,INVENTORY=10;
-    private final SimpleContainerData data = new SimpleContainerData(27);
+    public static final int PASSIVE=5,BABY_FORM=6,JUNIOR_FORM=7,TALENTS=8,PLENO_FORM=9,INVENTORY=10,CANCEL_TARGET=11,ULTIMATE=12;
+    private final SimpleContainerData data = new SimpleContainerData(28);
+    public br.com.soulbound.network.GrimoirePayload view;
+    private br.com.soulbound.network.GrimoirePayload sentView;
+    public static final int TAB_FIRST=100,TALENT_FIRST=200;
+    public final SimpleContainerData talents=new SimpleContainerData(TalentMenu.DATA_SIZE);
     private final Player owner;
     private final InteractionHand hand;
     private final @Nullable SoulboundRecord session;
@@ -32,17 +36,19 @@ public final class SoulCommandMenu extends AbstractContainerMenu {
     public SoulCommandMenu(int id, Inventory inventory) { this(id, inventory, InteractionHand.MAIN_HAND, null); }
 
     public SoulCommandMenu(int id, Inventory inventory, InteractionHand hand, @Nullable SoulboundRecord session) {
-        super(ModMenus.SOUL_COMMAND.get(), id);
+        super(ModMenus.SOUL_COMMAND.get(),id,inventory,session);
         owner = inventory.player;
         this.hand = hand;
         this.session = session;
-        addDataSlots(data);
+        addDataSlots(data);addDataSlots(talents);
         refresh();
     }
 
     private @Nullable SoulboundRecord current(ServerPlayer player) {
         if (session == null || player != owner) return null;
-        var record = SoulStaffCommands.authorize(player, player.getItemInHand(hand));
+        var record = SoulStaffCommands.information(player, player.getItemInHand(hand));
+        if(record==null)record=SoulStaffCommands.information(player,getCarried());
+        if(record==null)for(int i=0;i<player.getInventory().getContainerSize();i++){var stack=player.getInventory().getItem(i);if(br.com.soulbound.companion.identity.SoulboundIdentity.isEgg(stack)){record=SoulStaffCommands.information(player,stack);if(record!=null)break;}}
         return record != null && record.matches(session.ownerUuid(), session.bondUuid(), session.companionUuid()) ? record : null;
     }
 
@@ -50,6 +56,7 @@ public final class SoulCommandMenu extends AbstractContainerMenu {
         if (!(owner instanceof ServerPlayer player)) return;
         var record = current(player);
         if (record == null) { data.set(2, 0); return; }
+        TalentMenu.sync(talents,player,record);
         var companion = SoulStaffCommands.loadedCompanion(player, record);
         data.set(0, record.companionStatus().ordinal());
         data.set(1, BehaviorMode.fromSavedName(record.behaviorMode()).ordinal());
@@ -72,12 +79,12 @@ public final class SoulCommandMenu extends AbstractContainerMenu {
         data.set(21,record.progression().available());data.set(22,record.progression().spent());
         data.set(23,record.unlockedForms().contains("PLENO")?1:0);data.set(26,companion!=null && companion.isAlive() && companion.distanceToSqr(player)<=64 && !br.com.soulbound.companion.CompanionFormService.ritualBusy(player.level().getServer(),player.getUUID())?1:0);
         long now=SoulRecallService.now(player.level().getServer());data.set(24,(int)Math.max(0,Math.min(900,(record.godCooldownEnd()-now+19)/20)));data.set(25,record.activeForm().equals("GOD")?(int)Math.max(0,(record.forms().god().end()-now+19)/20):0);
-        data.set(16,br.com.soulbound.companion.JuniorCombat.ultimateState(record.activeForm(),BehaviorMode.fromSavedName(record.behaviorMode()),companion!=null && companion.distanceToSqr(player)<=32*32,
+        data.set(16,br.com.soulbound.companion.JuniorCombat.ultimateState(record.activeForm(),companion!=null && br.com.soulbound.companion.target.TargetCommandService.has(companion)?BehaviorMode.FOLLOW_COMBAT:BehaviorMode.fromSavedName(record.behaviorMode()),companion!=null && companion.distanceToSqr(player)<=32*32,
             companion!=null && br.com.soulbound.companion.CompanionFormService.busy(companion),record.forms().activeUltimateEnd(),now));
     }
 
     @Override
-    public void broadcastChanges() { refresh(); super.broadcastChanges(); }
+    public void broadcastChanges() { refresh(); if(owner instanceof ServerPlayer p && p.containerMenu==this && (sentView==null || p.tickCount%10==0)){var r=current(p);if(r!=null){var next=br.com.soulbound.companion.GrimoireSnapshot.create(containerId,p,r);if(!next.equals(sentView)){sentView=next;net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(p,next);}}} super.broadcastChanges(); }
 
     @Override
     public boolean stillValid(Player player) {
@@ -87,9 +94,16 @@ public final class SoulCommandMenu extends AbstractContainerMenu {
     @Override
     public boolean clickMenuButton(Player player, int button) {
         if (!(player instanceof ServerPlayer serverPlayer) || player.containerMenu != this
-                || button<0 || button>INVENTORY || current(serverPlayer) == null || session == null) return false;
-        if(button==INVENTORY){var r=current(serverPlayer);var c=br.com.soulbound.companion.SoulStaffCommands.loadedCompanion(serverPlayer,r);if(c==null || !c.isAlive() || c.distanceToSqr(serverPlayer)>64)return false;br.com.soulbound.companion.CompanionEquipment.capture(c);r=current(serverPlayer);var selected=r;serverPlayer.openMenu(new net.minecraft.world.SimpleMenuProvider((id,inv,p)->new CompanionInventoryMenu(id,inv,selected),net.minecraft.network.chat.Component.translatable("menu.soulbound.inventory")));return true;}
-        if(button==TALENTS){serverPlayer.openMenu(new net.minecraft.world.SimpleMenuProvider((id,inv,p)->new TalentMenu(id,inv,hand,current(serverPlayer)),net.minecraft.network.chat.Component.translatable("menu.soulbound.talents")));return true;}
+                || current(serverPlayer) == null || session == null) return false;
+        if(button==CANCEL_TARGET){br.com.soulbound.companion.target.TargetCommandService.cancel(serverPlayer);return true;}
+        if(button==ULTIMATE)return br.com.soulbound.companion.CompanionFormService.ultimate(serverPlayer);
+        if(button>=TAB_FIRST && button<TAB_FIRST+7){resetQuickCraft();data.set(27,button-TAB_FIRST);broadcastChanges();return true;}
+        if(button>=TALENT_FIRST && button<TALENT_FIRST+br.com.soulbound.companion.progression.TalentDefinitions.ALL.size()){
+            if(tab()!=2)return false;boolean ok=TalentMenu.invest(serverPlayer,current(serverPlayer),button-TALENT_FIRST);refresh();broadcastChanges();return ok;
+        }
+        if(button==INVENTORY){refresh();if(!canInventory())return false;resetQuickCraft();data.set(27,1);broadcastChanges();return true;}
+        if(button==TALENTS){resetQuickCraft();data.set(27,2);broadcastChanges();return true;}
+        if(button<0 || button>ULTIMATE)return false;
         if(button==BABY_FORM || button==JUNIOR_FORM)return br.com.soulbound.companion.CompanionFormService.select(serverPlayer,hand,button==BABY_FORM?"BABY":"JUNIOR");
         if(button==PLENO_FORM)return br.com.soulbound.companion.CompanionFormService.select(serverPlayer,hand,"PLENO");
         if(button==LOCATE_RUIN)return br.com.soulbound.companion.AncestralResonance.request(serverPlayer,hand,session);
@@ -99,9 +113,11 @@ public final class SoulCommandMenu extends AbstractContainerMenu {
                 button == FOLLOW ? BehaviorMode.FOLLOW_COMBAT : button==PASSIVE?BehaviorMode.FOLLOW_PASSIVE:BehaviorMode.STAY);
     }
 
-    @Override
-    public ItemStack quickMoveStack(Player player, int slot) { return ItemStack.EMPTY; }
-
+    @Override protected boolean inventoryVisible(){return data!=null && tab()==1 && canInventory();}
+    public int tab(){return Math.max(0,Math.min(6,data.get(27)));}
+    public void previewTab(int tab){if(owner.level().isClientSide() && tab>=0 && tab<7){resetQuickCraft();data.set(27,tab);}}
+    public int talentRank(int index){return talents.get(7+index);}
+    public int talentReason(int index){return talents.get(7+br.com.soulbound.companion.progression.TalentDefinitions.ALL.size()+index);}
     public boolean canInventory(){return data.get(26)==1;}
     public boolean canCommand() { return data.get(2) == 1; }
     public int recallSeconds() { return Math.max(0, data.get(7)); }

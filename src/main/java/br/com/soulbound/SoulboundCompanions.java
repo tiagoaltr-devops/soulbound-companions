@@ -25,6 +25,10 @@ public class SoulboundCompanions {
         modEventBus.addListener(ModEntities::registerAttributes);
         modEventBus.addListener(this::addCreative);
         modEventBus.addListener(br.com.soulbound.network.JuniorUltimatePayload::register);
+        modEventBus.addListener(br.com.soulbound.network.TargetCommandPayload::register);
+        modEventBus.addListener(br.com.soulbound.network.TargetStatusPayload::register);
+        modEventBus.addListener(br.com.soulbound.network.GrimoirePayload::register);
+        modEventBus.addListener(br.com.soulbound.network.GrimoireOpenPayload::register);
         modEventBus.addListener(br.com.soulbound.network.CompanionHudPayload::register);
     }
 

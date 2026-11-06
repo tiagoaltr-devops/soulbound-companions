@@ -41,7 +41,10 @@ import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.world.phys.Vec3;
 import org.jspecify.annotations.Nullable;
 
-public class LupusCompanionEntity extends PathfinderMob {
+public class LupusCompanionEntity extends PathfinderMob implements br.com.soulbound.companion.target.TargetCommandActor {
+    @Override public net.minecraft.world.entity.Mob commandActor(){return this;}
+    @Override public boolean acceptsTargetCommand(){return !level().isClientSide() && isAlive() && !isBaby() && SoulboundIdentity.isCanonical(this) && !br.com.soulbound.companion.CompanionSurvival.defensive(this) && !isRitualizing() && !isResonating() && !br.com.soulbound.companion.CompanionFormService.ritualBusy(level().getServer(),getOwnerUuid()) && !br.com.soulbound.companion.recall.SoulRecallService.inProgress(level().getServer(),getBondUuid());}
+    @Override public void cancelTargetActions(){plenoCombat.cancelAll();setTarget(null);}
     private br.com.soulbound.companion.progression.TalentEffects.Profile talentProfile=br.com.soulbound.companion.progression.TalentEffects.NONE;
     private java.util.Map<String,Integer> cachedTalents=java.util.Map.of();private String cachedTalentForm="";private long combatUntil;private boolean healthWasGod;private double godHealthScale=2;
     public br.com.soulbound.companion.progression.TalentEffects.Profile talents(){return talentProfile;}
@@ -117,7 +120,7 @@ public class LupusCompanionEntity extends PathfinderMob {
     public boolean actionLocksMovement(){return getActionEnd()>level().getGameTime() && (actionType()==2 || actionType()==3 || actionType()>=15);}
     public void showAction(int ticks,int type){if(!level().isClientSide()){entityData.set(ACTION,type);showAction(ticks);}}
     public int actionType(){return entityData.get(ACTION);}
-    public boolean canFight(){return !level().isClientSide() && isAlive() && SoulboundIdentity.isCanonical(this) && !br.com.soulbound.companion.CompanionSurvival.defensive(this) && br.com.soulbound.companion.JuniorCombat.enabled(getEvolutionStage().name(),getBehaviorMode(),br.com.soulbound.companion.CompanionFormService.busy(this));}
+    public boolean canFight(){return !level().isClientSide() && isAlive() && SoulboundIdentity.isCanonical(this) && !br.com.soulbound.companion.CompanionSurvival.defensive(this) && br.com.soulbound.companion.JuniorCombat.enabled(getEvolutionStage().name(),br.com.soulbound.companion.target.TargetCommandService.has(this)?BehaviorMode.FOLLOW_COMBAT:getBehaviorMode(),br.com.soulbound.companion.CompanionFormService.busy(this));}
     @Override protected net.minecraft.world.entity.EntityDimensions getDefaultDimensions(net.minecraft.world.entity.Pose pose){return (isPleno() || isGod())?net.minecraft.world.entity.EntityDimensions.scalable(1,2.25f):isGroundForm()?net.minecraft.world.entity.EntityDimensions.scalable(.65f,1.85f):super.getDefaultDimensions(pose);}
     private void updateMovement(){
         if(plenoCombat!=null)plenoCombat.cancelAll();
@@ -152,6 +155,7 @@ public class LupusCompanionEntity extends PathfinderMob {
     protected void registerGoals() {
         goalSelector.addGoal(0,new br.com.soulbound.entity.ai.RitualFocusGoal(this));
         goalSelector.addGoal(1,new br.com.soulbound.entity.ai.DefensiveRetreatGoal(this));
+        goalSelector.addGoal(2,new br.com.soulbound.entity.ai.JuniorCombatGoal(this,true));
         goalSelector.addGoal(4,new br.com.soulbound.entity.ai.JuniorCombatGoal(this));
         goalSelector.addGoal(1, new BabyFleeThreatGoal(this));
         goalSelector.addGoal(2, new ThreatRecoilGoal(this));
@@ -261,6 +265,7 @@ public class LupusCompanionEntity extends PathfinderMob {
     }
 
     private void setBehaviorMode(BehaviorMode mode) {
+        if(!level().isClientSide())br.com.soulbound.companion.target.TargetCommandService.cancel(this);
         if(plenoCombat!=null && !level().isClientSide())plenoCombat.cancelAll();
         entityData.set(MODE, mode.ordinal());setTarget(null);
         stayAnchor = mode == BehaviorMode.STAY ? position() : null;

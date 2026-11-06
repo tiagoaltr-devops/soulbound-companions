@@ -81,7 +81,7 @@ public final class PlenoCombatController {
         if(!preparing())return;var owner=c.getOwnerPlayer();var r=record();long now=c.level().getServer().overworld().getGameTime();
         if(!c.isAlive() || !(c.isPleno() || c.isGod()) || !(owner instanceof ServerPlayer p) || !p.isAlive() || p.isSpectator() || p.hasDisconnected() || c.distanceToSqr(p)>32*32
                 || r==null || !r.ownerUuid().equals(catOwner) || !r.bondUuid().equals(catBond) || !r.activeForm().equals(catForm) || c.isGod() && now>=r.forms().god().end() || !SoulboundIdentity.isCanonical(c)
-                || c.getBehaviorMode()!=BehaviorMode.FOLLOW_COMBAT || !r.behaviorMode().equals("FOLLOW_COMBAT") || c.actionType()!=15
+                || (!br.com.soulbound.companion.target.TargetCommandService.has(c) && (c.getBehaviorMode()!=BehaviorMode.FOLLOW_COMBAT || !r.behaviorMode().equals("FOLLOW_COMBAT"))) || c.actionType()!=15
                 || CompanionFormService.ritualBusy(c.level().getServer(),catOwner) || br.com.soulbound.companion.recall.SoulRecallService.inProgress(c.level().getServer(),catBond) || c.isResonating()){
             catAt=0;catOwner=null;catBond=null;return;
         }

@@ -2,7 +2,7 @@
 
 Minecraft Java **1.21.11** · NeoForge **21.11.48** · Mod ID: `soulbound`.
 
-Este manual descreve o código atual, incluindo a Fase 6.4. Receitas, custos e
+Este manual descreve o código atual, incluindo a Fase 6.10.4. Receitas, custos e
 intervalos abaixo são os padrões do projeto; configurações do servidor e datapacks
 podem substituí-los. Tempos em segundos pressupõem 20 ticks por segundo.
 Implementado não significa homologado em partida: veja as limitações no fim.
@@ -32,14 +32,14 @@ são protegidos; o item de outro proprietário não concede controle sobre o ví
 | --- | --- | --- |
 | READY | Ovo da Alma | Primeira invocação |
 | SUMMONING | Ovo da Alma | Aguardar a reserva de invocação; não invocar novamente |
-| ACTIVE | Bastão da Alma | Comandos do companheiro |
+| ACTIVE | Grimório da Alma | Comandos do companheiro |
 | DEAD | Ovo Fragmentado | Preparar restauração; Follow/Stay bloqueados |
-| MISSING | Bastão Inativo | Revisão administrativa; sem recriação automática |
+| MISSING | Grimório Inativo | Revisão administrativa; sem recriação automática |
 
 São aparências do **mesmo item**, `soulbound:companion_egg`, e não itens separados.
 A tooltip informa proprietário, espécie, estágio, estado e modo.
 
-## 2. Bastão, movimento e sobrevivência
+## 2. Grimório, movimento e sobrevivência
 
 ### Painel de status na tela principal
 
@@ -55,15 +55,31 @@ O painel respeita a escala de GUI, se desloca abaixo de boss bars quando necess�
 e fica oculto em menus, F1, F3 e Tab. Não substitui a vida ou o XP do jogador.
 Inspeção visual pendente: [complemento de HUD da Fase 6.6](FASE_6_6_HUD.md).
 
-- **Botão direito com o Bastão:** alterna Seguir e Ficar.
-- **Shift + botão direito:** abre o menu de comandos.
+- **Botão direito com o Grimório:** abre o hub do companheiro.
+- **Abas do Grimório:** visão geral, inventário, talentos, habilidades, status, comandos e vínculo.
+- **Inventário e talentos integrados:** os slots e a árvore funcionam dentro do
+  Grimório. Selecione um nó para consultar detalhes e investir pontos. Trocar de
+  aba preserva o cursor; na aba Inventário, teclas numéricas mantêm a função de
+  hotbar e a navegação usa a sidebar. Movimentar itens exige companheiro a até oito
+  blocos. Veja a [integração nativa](FASE_6_10_4_1_INTEGRACAO.md).
 - **Botão direito diretamente no Lupus:** o proprietário alterna Seguir/Ficar.
 - **Seguir:** o Lupus acompanha o dono por navegação aérea, ajustando a altura.
 - **Ficar:** paira próximo ao ponto definido. Fuga emergencial pode afastá-lo
   temporariamente; depois, retorna ao ponto, preservando o modo.
 
 O Baby é passivo: não inicia ataques contra jogadores ou mobs. Ele possui
-**12 pontos de vida**, asas animadas e movimento flutuante.
+**33,6 pontos de vida base**, asas animadas e movimento flutuante.
+
+### Ataque direcionado
+
+Use **G** sobre uma entidade viva para ordenar o ataque; repita sobre o mesmo alvo
+ou use **V** para cancelar. Os atalhos são remapeáveis nos Controles. R continua
+reservado à ultimate. Baby não ataca. A ordem permite combate temporário em Ficar
+e Passivo, preservando a preferência e o ponto de Ficar. Expira por padrão após
+30 segundos; cancelamento, perigo defensivo ou alvo inválido também encerram a ordem.
+Jogadores dependem de PvP habilitado na dimensão e das regras de equipes/proteção.
+Pacíficos e jogadores não designados continuam excluídos dos ataques automáticos
+e das áreas do mod. Detalhes: [Fase 6.10.4](FASE_6_10_4_GRIMORIO.md).
 
 ### Alerta de ameaças e fuga
 

@@ -31,7 +31,7 @@ public final class CompanionFormService {
         var server=p.level().getServer();var r=SoulboundSavedData.get(server).find(p.getUUID());
         var c=r==null?null:SoulStaffCommands.loadedCompanion(p,r);long now=server.overworld().getGameTime();
         boolean available=r!=null && p.isAlive() && !p.isSpectator() && r.companionStatus()==CompanionStatus.ACTIVE && !r.resurrectionRequired() && c!=null && c.distanceToSqr(p)<=32*32;
-        int state=r==null?4:JuniorCombat.ultimateState(r.activeForm(),BehaviorMode.fromSavedName(r.behaviorMode()),available,c!=null && busy(c),r.forms().activeUltimateEnd(),now);
+        int state=r==null?4:JuniorCombat.ultimateState(r.activeForm(),c!=null && br.com.soulbound.companion.target.TargetCommandService.has(c)?BehaviorMode.FOLLOW_COMBAT:BehaviorMode.fromSavedName(r.behaviorMode()),available,c!=null && busy(c),r.forms().activeUltimateEnd(),now);
         if(state!=0){
             if(now>=NEXT_FEEDBACK.getOrDefault(p,Long.MIN_VALUE)){NEXT_FEEDBACK.put(p,now+20);
                 p.displayClientMessage(Component.translatable("message.soulbound.ultimate."+state,r==null?0:Math.max(0,(r.forms().activeUltimateEnd()-now+19)/20)),true);}

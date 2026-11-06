@@ -69,21 +69,11 @@ public class CompanionEggItem extends Item {
         if (!(player instanceof ServerPlayer serverPlayer)) return InteractionResult.FAIL;
         var record = SoulboundIdentity.validateEgg(serverPlayer, player.getItemInHand(hand));
         if (record == null) return InteractionResult.FAIL;
-        if (record.companionStatus() != CompanionStatus.ACTIVE) {
-            if (!record.canSummon()) SoulboundIdentity.message(serverPlayer, record.companionStatus()==CompanionStatus.DEAD?"companion_dead":"companion_unavailable");
-            return record.canSummon() ? InteractionResult.PASS : InteractionResult.FAIL;
-        }
-        return command(serverPlayer, hand, record);
+        return record.canSummon()?InteractionResult.PASS:command(serverPlayer,hand,record);
     }
 
-    private InteractionResult command(ServerPlayer player, InteractionHand hand, br.com.soulbound.companion.identity.SoulboundRecord record) {
-        if (player.isShiftKeyDown()) {
-            SoulStaffCommands.openMenu(player, hand);
-            return InteractionResult.SUCCESS;
-        }
-        var mode = BehaviorMode.fromSavedName(record.behaviorMode()) == BehaviorMode.STAY
-                ? BehaviorMode.FOLLOW_PASSIVE : BehaviorMode.STAY;
-        return SoulStaffCommands.setMode(player, player.getItemInHand(hand), record, mode) ? InteractionResult.SUCCESS : InteractionResult.FAIL;
+    private InteractionResult command(ServerPlayer player,InteractionHand hand,br.com.soulbound.companion.identity.SoulboundRecord record) {
+        SoulStaffCommands.openMenu(player,hand);return InteractionResult.SUCCESS;
     }
 
     @Override
@@ -94,18 +84,12 @@ public class CompanionEggItem extends Item {
         BlockPos clicked = context.getClickedPos();
         BlockPos pos = level.getBlockState(clicked).getCollisionShape(level, clicked).isEmpty()
                 ? clicked : clicked.relative(context.getClickedFace());
-        if (!level.mayInteract(player, clicked) || !player.mayUseItemAt(pos, context.getClickedFace(), context.getItemInHand())) {
-            return InteractionResult.FAIL;
-        }
         if (!(level instanceof ServerLevel serverLevel)) return InteractionResult.SUCCESS;
         if (!(player instanceof ServerPlayer serverPlayer)) return InteractionResult.FAIL;
         var record = SoulboundIdentity.validateEgg(serverPlayer, context.getItemInHand());
         if (record == null) return InteractionResult.FAIL;
-        if (record.companionStatus() == CompanionStatus.ACTIVE) return command(serverPlayer, context.getHand(), record);
-        if (!record.canSummon()) {
-            SoulboundIdentity.message(serverPlayer, record.companionStatus()==CompanionStatus.DEAD?"companion_dead":"companion_unavailable");
-            return InteractionResult.FAIL;
-        }
+        if (!record.canSummon()) return command(serverPlayer, context.getHand(), record);
+        if (!level.mayInteract(player, clicked) || !player.mayUseItemAt(pos, context.getClickedFace(), context.getItemInHand())) return InteractionResult.FAIL;
         for (var dimension : serverLevel.getServer().getAllLevels()) {
             if (dimension.getEntity(record.companionUuid()) != null) {
                 SoulboundIdentity.message(serverPlayer, "companion_unavailable");

@@ -45,6 +45,7 @@ public final class SoulStaffCommands {
             SoulboundIdentity.message(player, "staff_unloaded");
             return false;
         }
+        br.com.soulbound.companion.target.TargetCommandService.cancel(player);
         if (companion.getBehaviorMode() == mode) return true; // Idempotent: do not reset Stay's anchor.
         if (!companion.commandBehaviorMode(player, mode)) return false;
         player.getCooldowns().addCooldown(stack, 6);
@@ -58,8 +59,12 @@ public final class SoulStaffCommands {
         return true;
     }
 
+    public static SoulboundRecord information(ServerPlayer player,ItemStack stack){
+        if(!player.isAlive() || player.isSpectator() || !SoulboundIdentity.isEgg(stack))return null;
+        var r=SoulboundSavedData.get(player.level().getServer()).find(player.getUUID());return r!=null && SoulEggIdentity.matches(stack,r)?r:null;
+    }
     public static void openMenu(ServerPlayer player, InteractionHand hand) {
-        var record = authorize(player, player.getItemInHand(hand));
+        var record = information(player, player.getItemInHand(hand));
         if (record == null) { SoulboundIdentity.message(player, "staff_denied"); return; }
         var companion = loadedCompanion(player, record);
         Component name = companion != null ? companion.getDisplayName() : Component.translatable("entity.soulbound.lupus_companion");
